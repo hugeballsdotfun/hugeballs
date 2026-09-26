@@ -1,5 +1,5 @@
 export const IDL = {
-  "address": "3VQsTJGWQ1L4t312R527475JKUuSjsbSjbQoKbFqKoQS",
+  "address": "UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs",
   "metadata": {
     "name": "balls_bond",
     "version": "0.1.0",
@@ -225,7 +225,7 @@ export const IDL = {
         },
         {
           "name": "program",
-          "address": "3VQsTJGWQ1L4t312R527475JKUuSjsbSjbQoKbFqKoQS"
+          "address": "UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs"
         },
         {
           "name": "program_data"

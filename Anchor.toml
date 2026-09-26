@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-balls_bond = "3VQsTJGWQ1L4t312R527475JKUuSjsbSjbQoKbFqKoQS"
+balls_bond = "UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs"
 
 [programs.devnet]
-balls_bond = "3VQsTJGWQ1L4t312R527475JKUuSjsbSjbQoKbFqKoQS"
+balls_bond = "UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs"
 
 [registry]
 url = "https://api.apr.dev"

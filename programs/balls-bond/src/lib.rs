@@ -11,7 +11,7 @@ pub mod state;
 // `__client_accounts_*` module (see solana-foundation/anchor#3690).
 pub use instructions::*;
 
-declare_id!("3VQsTJGWQ1L4t312R527475JKUuSjsbSjbQoKbFqKoQS");
+declare_id!("UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs");
 
 /// How long a bond stays open before an unmet one can be burned.
 #[cfg(not(feature = "devnet-short-deadline"))]
