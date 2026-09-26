@@ -9,8 +9,6 @@ Balls is a launchpad for [pump.fun](https://pump.fun) coins with one rule: a dev
 
 Live site: **https://hugeballs.fun** · X: [@hugeballsdotfun](https://x.com/hugeballsdotfun)
 
-> **Status: unaudited.** The escrow program is new software that has not been independently audited. Its upgrade authority is currently held by the project admin wallet (see [Trust model](#trust-model)). Don't lock more than you can afford to lose.
-
 ## How it works
 
 ```
