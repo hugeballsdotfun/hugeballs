@@ -98,7 +98,6 @@ function setIcon(el, image, letter) {
   if (!image || !/^https?:\/\//.test(image)) return;
   const img = document.createElement("img");
   img.alt = "";
-  img.loading = "lazy";
   img.src = image;
   img.addEventListener("load", () => {
     el.textContent = "";
