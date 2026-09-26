@@ -19,6 +19,7 @@ import {
   fetchBurners,
   fetchPumpStartMcap,
   fetchCoinTrades,
+  fetchMarketHistory,
   timeAgoText,
   BOND_DURATION_SECS,
   MODE,
@@ -45,7 +46,7 @@ const $ = (id) => document.getElementById(id);
 
 // Everything the page shows is derived from this. `refresh()` re-reads the chain and repaints
 // in place, so a trade / claim / burn never needs a page reload (which would drop the wallet).
-const state = { mint: null, view: null, curve: null, solUsd: null, trades: [], startMcap: null, burners: [], listeners: [] };
+const state = { mint: null, view: null, curve: null, solUsd: null, trades: [], candles: [], source: "chain", startMcap: null, burners: [], listeners: [] };
 
 function fillCopyRow(id, value, type = "account") {
   const el = $(id);
@@ -197,6 +198,23 @@ let tradesShown = 20;
 let chartWindow = 0; // seconds; 0 = all
 
 async function refreshTrades() {
+  // Preferred: the indexer's history (hundreds of trades + candles). Fallback: read the chain.
+  try {
+    const h = await fetchMarketHistory(state.mint);
+    if (h && h.trades.length) {
+      state.trades = h.trades;
+      state.candles = h.candles;
+      state.source = "index";
+      renderTrades();
+      renderChart();
+      return;
+    }
+  } catch (err) {
+    console.warn("Market history unavailable", err?.message || err);
+    if (state.source === "index") return; // rate-limited mid-session: keep what we have
+  }
+  state.source = "chain";
+  state.candles = [];
   try {
     state.trades = await fetchCoinTrades(state.mint, 80, (partial) => {
       state.trades = partial;
@@ -223,7 +241,7 @@ function renderTrades() {
     more.hidden = true;
     return;
   }
-  note.textContent = `${state.trades.length} trade${state.trades.length === 1 ? "" : "s"}, newest first. Read straight from the blockchain.`;
+  note.textContent = `${state.trades.length} trade${state.trades.length === 1 ? "" : "s"}, newest first. ${state.source === "index" ? "Market data from GeckoTerminal." : "Read straight from the blockchain."}`;
   for (const t of state.trades.slice(0, tradesShown)) {
     const tr = document.createElement("tr");
     const acc = document.createElement("td");
@@ -273,8 +291,15 @@ function chartPoints() {
   const asc = [...state.trades].sort((x, y) => x.time - y.time);
   const created = state.view.deadline - BOND_DURATION_SECS;
   const pts = [];
-  if (state.startMcap) pts.push({ t: Math.min(created, asc[0]?.time ?? created), v: state.startMcap });
-  for (const tr of asc) pts.push({ t: tr.time, v: tr.mcap, trade: tr });
+  if (state.candles.length && state.solUsd) {
+    // candle closes are USD market caps; the chart works in lamports
+    for (const c of state.candles) pts.push({ t: c.t, v: (c.usd / state.solUsd) * 1e9 });
+    for (const tr of asc) pts.push({ t: tr.time, v: tr.mcap, trade: tr });
+    pts.sort((a, b) => a.t - b.t);
+  } else {
+    if (state.startMcap) pts.push({ t: Math.min(created, asc[0]?.time ?? created), v: state.startMcap });
+    for (const tr of asc) pts.push({ t: tr.time, v: tr.mcap, trade: tr });
+  }
   pts.push({ t: Math.floor(Date.now() / 1000), v: state.view.mcap });
   return pts;
 }

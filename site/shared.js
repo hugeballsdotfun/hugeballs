@@ -1128,6 +1128,54 @@ const tradeCacheKey = (mint) => `balls_trades_v1_${NETWORK}_${mint}`;
 const packTrade = (t) => ({ ...t, sol: t.sol.toString(), tokens: t.tokens.toString(), vs: t.vs.toString(), vt: t.vt.toString() });
 const unpackTrade = (t) => ({ ...t, sol: BigInt(t.sol), tokens: BigInt(t.tokens), vs: BigInt(t.vs), vt: BigInt(t.vt) });
 
+// ---------------------------------------------------------------------
+// Market history from GeckoTerminal (indexes pump.fun curves and PumpSwap pools).
+// CORS-open, no key. Gives the last ~300 trades and OHLCV candles, far more than
+// we could rebuild from raw transactions. The on-chain reader above stays as the
+// fallback for coins the indexer hasn't picked up yet.
+// ---------------------------------------------------------------------
+const GECKO = "https://api.geckoterminal.com/api/v2/networks/solana";
+const poolCache = new Map();
+async function geckoJson(path) {
+  const r = await fetch(`${GECKO}${path}`, { headers: { accept: "application/json" } });
+  if (!r.ok) throw new Error(`GeckoTerminal ${r.status}`);
+  return r.json();
+}
+export async function fetchMarketHistory(mint) {
+  let pool = poolCache.get(mint);
+  if (!pool) {
+    const pools = (await geckoJson(`/tokens/${mint}/pools`)).data || [];
+    if (!pools.length) return null;
+    pool = pools[0].attributes.address;
+    poolCache.set(mint, pool);
+  }
+  const [tr, oh] = await Promise.all([
+    geckoJson(`/pools/${pool}/trades`).catch(() => null),
+    geckoJson(`/pools/${pool}/ohlcv/minute?aggregate=5&limit=1000&currency=usd&token=base`).catch(() => null),
+  ]);
+  const trades = ((tr && tr.data) || [])
+    .map((d) => d.attributes)
+    .filter((a) => a.kind === "buy" || a.kind === "sell")
+    .map((a) => {
+      const isBuy = a.kind === "buy";
+      const sol = Number(isBuy ? a.from_token_amount : a.to_token_amount);
+      const tokens = Number(isBuy ? a.to_token_amount : a.from_token_amount);
+      return {
+        sig: a.tx_hash,
+        time: Math.floor(Date.parse(a.block_timestamp) / 1000),
+        isBuy,
+        user: a.tx_from_address,
+        sol: Math.round(sol * 1e9),
+        tokens: Math.round(tokens * 1e6),
+        priceUsd: Number(isBuy ? a.price_to_in_usd : a.price_from_in_usd),
+        mcap: Math.round(Number(isBuy ? a.price_to_in_currency_token : a.price_from_in_currency_token) * 1e18),
+      };
+    })
+    .filter((t) => t.sig && t.time);
+  const candles = ((oh && oh.data.attributes.ohlcv_list) || []).map((c) => ({ t: c[0], usd: c[4] * 1e9 })).sort((a, b) => a.t - b.t);
+  return { pool, trades, candles };
+}
+
 // Newest first. Returns [{sig, time, isBuy, user, sol, tokens, vs, vt, mcap}].
 // Provider plans rate-limit requests per second, and every transaction in a batch counts,
 // so missing transactions are fetched in small chunks with a pause between them, and
