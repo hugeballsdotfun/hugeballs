@@ -11,13 +11,15 @@ ADMIN="HE8Khn19yPTzFZTLcoZLZqRV1AWypnUJ4L4NoYLS66uw"          # resolver + final
 KEEPER="${KEEPER:?set KEEPER=<keeper public address>}"
 HOST="${BALLS_HOST:?set BALLS_HOST=user@your-server}"
 # The paid RPC url lives only on the server; fetch it for this run.
-RPC="$(ssh -o BatchMode=yes "$HOST" "sed -n 's/^proxy_pass \(.*\);\$/\1/p' /etc/nginx/secrets/balls-rpc.conf | head -1")"
+RPC="$(ssh -n -o BatchMode=yes "$HOST" "sed -n 's/^proxy_pass \(.*\);\$/\1/p' /etc/nginx/secrets/balls-rpc.conf | head -1")"
 PID="$(solana address -k "$PROGRAM_KEYPAIR")"
 BAL="$(solana balance -k "$DEPLOYER" -u "$RPC" | awk '{print $1}')"
 echo "program id: $PID | deployer: $(solana address -k "$DEPLOYER") | balance: $BAL SOL"
-awk -v b="$BAL" 'BEGIN{ if (b+0 < 4.2) { print "Need at least ~4.2 SOL in the deployer wallet (about 1.9 stays as program rent, the rest is a temporary buffer that comes back)."; exit 1 } }'
+awk -v b="$BAL" 'BEGIN{ if (b+0 < 3.85) { print "Need at least ~3.85 SOL in the deployer wallet (about 1.9 stays as program rent, the rest is a temporary buffer that comes back)."; exit 1 } }'
 echo "sha256 of the binary being deployed: $(shasum -a 256 "$SO" | cut -d' ' -f1)"
-read -r -p "Deploy to MAINNET? type 'yes': " OK; [ "$OK" = "yes" ] || { echo aborted; exit 1; }
+if [ "${BALLS_CONFIRM:-}" != "yes" ]; then
+  read -r -p "Deploy to MAINNET? type 'yes': " OK; [ "$OK" = "yes" ] || { echo aborted; exit 1; }
+fi
 
 solana program deploy "$SO" --program-id "$PROGRAM_KEYPAIR" --keypair "$DEPLOYER" --url "$RPC" --with-compute-unit-price 100000
 echo "--- initializing config (resolver=$ADMIN, keeper=$KEEPER)"

@@ -60,6 +60,12 @@ scripts/               devnet tests, mainnet simulation, config initialisation
 deploy/                nginx config and helper scripts for a single VPS
 ```
 
+## Mainnet deployment
+
+- **Program:** [`UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs`](https://solscan.io/account/UreL6sVKo1EgsyLwwhGL6gBKA3V3zTDb2YC7Z3bALLs)
+- **Binary sha256:** `1813f7325d9f7d96849104362d6b013cfc92814aeabca44c56e3102199374615` (371,512 bytes, reproducible with `anchor build`)
+- **Admin / upgrade authority:** `HE8Khn19yPTzFZTLcoZLZqRV1AWypnUJ4L4NoYLS66uw`
+
 ## Build and verify the contract
 
 Requires Rust, the Solana CLI and Anchor 0.31.1.
