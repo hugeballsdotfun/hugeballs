@@ -78,12 +78,16 @@
               <button type="button" class="chart-tab selected" data-window="0">ALL</button>
             </div>
           </div>
+          <div class="gt-embed" id="gtEmbed" hidden>
+            <iframe id="gtFrame" title="Price chart" loading="lazy" referrerpolicy="no-referrer" allow="clipboard-write"></iframe>
+            <p class="hint gt-links" id="gtLinks"></p>
+          </div>
           <div class="chart-wrap" id="chartWrap">
             <svg id="priceChart" viewBox="0 0 640 260" preserveAspectRatio="none" role="img" aria-label="Market cap over time"></svg>
             <div class="chart-tip" id="chartTip" hidden></div>
             <div class="chart-empty" id="chartEmpty" hidden>No trades yet.</div>
           </div>
-          <div class="chart-legend"><span><i class="dot buy"></i>Buy</span><span><i class="dot sell"></i>Sell</span><span><i class="dash"></i>Target</span></div>
+          <div class="chart-legend" id="chartLegend"><span><i class="dot buy"></i>Buy</span><span><i class="dot sell"></i>Sell</span><span><i class="dash"></i>Target</span></div>
         </div>
 
         <div class="card detail-section">
@@ -129,11 +133,16 @@
               <button type="button" class="trade-tab selected" id="tradeTabBuy">Buy</button>
               <button type="button" class="trade-tab" id="tradeTabSell">Sell</button>
             </div>
-            <form id="tradeForm" class="form">
-              <label id="tradeAmountLabel"><span id="tradeAmountText">SOL to spend</span><input name="amount" id="tradeAmount" required placeholder="0.00" inputmode="decimal" autocomplete="off"></label>
-              <p class="hint" id="tradeBalance"></p>
-              <p class="hint" id="tradePreview"></p>
-              <button type="submit" class="btn btn-primary full" id="tradeSubmit">Buy</button>
+            <form id="tradeForm" class="trade-form">
+              <div class="trade-balance"><span>Your balance</span><b id="tradeBalance">-</b></div>
+              <div class="trade-input">
+                <input name="amount" id="tradeAmount" required placeholder="0.00" inputmode="decimal" autocomplete="off" aria-label="Amount">
+                <span class="trade-unit" id="tradeUnit">SOL</span>
+              </div>
+              <div class="quick-row" id="tradeQuick"></div>
+              <div class="trade-receive"><span>You receive</span><b id="tradePreview">-</b></div>
+              <p class="hint trade-fine">Up to 5% slippage.</p>
+              <button type="submit" class="btn btn-primary full trade-submit" id="tradeSubmit">Buy</button>
             </form>
           </div>
           <p class="hint" id="tradeGraduated" hidden>This coin graduated from the pump.fun curve — trade it on pump.fun / PumpSwap.</p>

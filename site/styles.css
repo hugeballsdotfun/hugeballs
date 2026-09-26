@@ -391,3 +391,28 @@ table.trades a:hover{color:var(--lime);}
 .tx-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--border);color:var(--dim);}
 .tx-tag.dev{color:#0b0d02;background:var(--lime);border-color:var(--lime);}
 .tx-tag.you{color:var(--text);border-color:#8a8d97;}
+
+/* ---------- trade panel ---------- */
+.trade-form{display:grid;gap:12px;}
+.trade-balance,.trade-receive{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--dim);}
+.trade-balance b,.trade-receive b{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600;text-align:right;}
+.trade-receive{padding:12px 14px;border-radius:12px;background:var(--bg-2);border:1px solid var(--border);}
+.trade-receive b{font-size:15px;}
+.trade-input{position:relative;}
+.trade-input input{width:100%;box-sizing:border-box;padding:16px 70px 16px 16px;font-size:22px;font-weight:700;font-family:var(--mono);border-radius:14px;border:1px solid var(--border);background:var(--bg-2);color:var(--text);}
+.trade-input input:focus{outline:none;border-color:var(--lime);}
+.trade-unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-weight:800;font-size:13px;color:var(--dim);letter-spacing:.06em;pointer-events:none;}
+.quick-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.quick-btn{padding:9px 4px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--dim);font-weight:700;font-size:13px;cursor:pointer;transition:.12s;}
+.quick-btn:hover{color:var(--text);border-color:var(--lime);}
+.quick-row.sell .quick-btn:hover{border-color:var(--fire);}
+.trade-fine{margin:0;text-align:center;font-size:12px;}
+.trade-submit{padding:15px;font-size:16px;font-weight:800;}
+.trade-submit.sell{background:linear-gradient(135deg,var(--fire),#d63a00);color:#fff;box-shadow:0 6px 24px rgba(255,90,31,.25);}
+.trade-submit.sell:hover{background:linear-gradient(135deg,#ff7a3f,#e84400);}
+
+/* ---------- embedded market chart ---------- */
+.gt-embed iframe{display:block;width:100%;height:440px;border:0;border-radius:12px;background:#0b0b0e;}
+.gt-links{margin:10px 0 0;font-size:12.5px;}
+.gt-links a{color:var(--lime);font-weight:700;margin-right:14px;}
+@media (max-width:640px){.gt-embed iframe{height:340px;}}

@@ -46,7 +46,7 @@ const $ = (id) => document.getElementById(id);
 
 // Everything the page shows is derived from this. `refresh()` re-reads the chain and repaints
 // in place, so a trade / claim / burn never needs a page reload (which would drop the wallet).
-const state = { mint: null, view: null, curve: null, solUsd: null, trades: [], candles: [], source: "chain", startMcap: null, burners: [], listeners: [] };
+const state = { mint: null, view: null, curve: null, solUsd: null, trades: [], candles: [], pool: null, source: "chain", startMcap: null, burners: [], listeners: [] };
 
 function fillCopyRow(id, value, type = "account") {
   const el = $(id);
@@ -197,10 +197,41 @@ async function refresh() {
 let tradesShown = 20;
 let chartWindow = 0; // seconds; 0 = all
 
+// GeckoTerminal's own chart (real candles, same look as DexScreener) once the coin is indexed.
+// Our SVG chart stays as the fallback for coins the indexer hasn't seen yet.
+function showEmbeddedChart() {
+  if (!state.pool) return;
+  const frame = $("gtFrame");
+  const src = `https://www.geckoterminal.com/solana/pools/${encodeURIComponent(state.pool)}?embed=1&info=0&swaps=0&light_chart=0&chart_type=market_cap&resolution=15m`;
+  if (frame.getAttribute("src") !== src) frame.setAttribute("src", src);
+  const links = $("gtLinks");
+  if (!links.childElementCount) {
+    for (const [label, url] of [
+      ["Open on GeckoTerminal", `https://www.geckoterminal.com/solana/pools/${state.pool}`],
+      ["Open on DexScreener", `https://dexscreener.com/solana/${state.pool}`],
+    ]) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = label;
+      links.appendChild(a);
+    }
+  }
+  $("gtEmbed").hidden = false;
+  $("chartWrap").hidden = true;
+  $("chartTabs").hidden = true;
+  $("chartLegend").hidden = true;
+}
+
 async function refreshTrades() {
   // Preferred: the indexer's history (hundreds of trades + candles). Fallback: read the chain.
   try {
     const h = await fetchMarketHistory(state.mint);
+    if (h) {
+      state.pool = h.pool;
+      showEmbeddedChart(); // the chart only needs the pool, even if the trade list is rate-limited
+    }
     if (h && h.trades.length) {
       state.trades = h.trades;
       state.candles = h.candles;
@@ -446,26 +477,61 @@ async function initTrade(mint, creator) {
   async function refreshBalances() {
     balances = await fetchBalances(mint);
     updateBalanceLine();
+    renderQuick();
   }
   function updateBalanceLine() {
-    if (!balances) return void (balanceEl.textContent = "");
-    balanceEl.textContent =
-      tab === "buy" ? `Balance: ${formatSol(balances.lamports, 4)} SOL` : `Balance: ${fmtTok(balances.tokens)} tokens`;
+    if (!balances) return void (balanceEl.textContent = "-");
+    balanceEl.textContent = tab === "buy" ? `${formatSol(balances.lamports, 4)} SOL` : `${fmtTok(balances.tokens)} tokens`;
+  }
+  const rawToInput = (raw) => {
+    const s = raw.toString().padStart(TOKEN_DECIMALS + 1, "0");
+    const whole = s.slice(0, -TOKEN_DECIMALS);
+    const frac = s.slice(-TOKEN_DECIMALS).replace(/0+$/, "");
+    return frac ? `${whole}.${frac}` : whole;
+  };
+  const FEE_RESERVE = 10_000_000n; // keep 0.01 SOL back for fees and rent on "max"
+  function renderQuick() {
+    const row = $("tradeQuick");
+    row.innerHTML = "";
+    row.classList.toggle("sell", tab === "sell");
+    const opts =
+      tab === "buy"
+        ? [["0.1", () => "0.1"], ["0.5", () => "0.5"], ["1", () => "1"], ["Max", () => {
+            if (!balances || balances.lamports <= FEE_RESERVE) return null;
+            return (Number(balances.lamports - FEE_RESERVE) / 1e9).toFixed(4);
+          }]]
+        : [["25%", 25n], ["50%", 50n], ["75%", 75n], ["100%", 100n]].map(([label, pct]) => [
+            label,
+            () => (balances && balances.tokens > 0n ? rawToInput((balances.tokens * pct) / 100n) : null),
+          ]);
+    for (const [label, get] of opts) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "quick-btn";
+      b.textContent = label;
+      b.addEventListener("click", () => {
+        const v = get();
+        if (v === null) return showToast(tab === "buy" ? "Not enough SOL." : "You have no tokens to sell.");
+        amountEl.value = v;
+        updatePreview();
+      });
+      row.appendChild(b);
+    }
   }
   function updatePreview() {
-    previewEl.textContent = "";
+    previewEl.textContent = "-";
     const v = amountEl.value.trim();
     if (!v || !state.curve) return;
     try {
       if (tab === "buy") {
         const spend = solToLamports(v);
         if (!spend) return;
-        previewEl.textContent = `≈ ${fmtTok(estimateBuyTokens(state.curve, spend))} tokens (before slippage; max 5% worse)`;
+        previewEl.textContent = `≈ ${fmtTok(estimateBuyTokens(state.curve, spend))} tokens`;
       } else {
         const m = /^(\d+)(?:\.(\d{1,6}))?$/.exec(v);
         if (!m) return;
         const raw = BigInt(m[1]) * 10n ** BigInt(TOKEN_DECIMALS) + BigInt((m[2] || "").padEnd(TOKEN_DECIMALS, "0") || "0");
-        previewEl.textContent = `≈ ${formatSol(estimateSellLamports(state.curve, raw), 4)} SOL (before slippage; max 5% worse)`;
+        previewEl.textContent = `≈ ${formatSol(estimateSellLamports(state.curve, raw), 4)} SOL`;
       }
     } catch {}
   }
@@ -473,8 +539,10 @@ async function initTrade(mint, creator) {
     tab = t;
     $("tradeTabBuy").classList.toggle("selected", t === "buy");
     $("tradeTabSell").classList.toggle("selected", t === "sell");
-    $("tradeAmountText").textContent = t === "buy" ? "SOL to spend" : "Tokens to sell";
+    $("tradeUnit").textContent = t === "buy" ? "SOL" : "TOKENS";
+    submit.classList.toggle("sell", t === "sell");
     submit.textContent = t === "buy" ? "Buy" : "Sell";
+    renderQuick();
     amountEl.value = "";
     updateBalanceLine();
     updatePreview();
@@ -490,6 +558,7 @@ async function initTrade(mint, creator) {
     panel.hidden = !wallet;
     if (wallet) refreshBalances();
   }
+  renderQuick();
   gate();
   onWalletChange(gate);
   state.listeners.push(async () => {
