@@ -312,6 +312,23 @@ export function isProgramLive() {
 }
 
 export function initNav() {
+  // Any element with data-copy copies that value on click (contract address buttons).
+  document.addEventListener("click", async (e) => {
+    const el = e.target.closest?.("[data-copy]");
+    if (!el) return;
+    try {
+      await navigator.clipboard.writeText(el.dataset.copy);
+      showToast("Contract address copied");
+      const label = el.classList.contains("ca-copy") || el.classList.contains("ca-card-btn") ? el : null;
+      if (label) {
+        const prev = label.textContent;
+        label.textContent = "Copied";
+        setTimeout(() => (label.textContent = prev), 1500);
+      }
+    } catch {
+      showToast("Couldn't copy. Select the address and copy it manually.");
+    }
+  });
   if (MODE === "escrow" && NETWORK === "mainnet") {
     isProgramLive().then((live) => {
       if (live || document.querySelector(".net-banner")) return;
