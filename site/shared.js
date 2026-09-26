@@ -455,8 +455,19 @@ async function uploadToIrys(bytes, contentType) {
     const bodyText = await resp.text().catch(() => "");
     throw new Error(`Irys upload failed (${resp.status}): ${bodyText.slice(0, 200)}`);
   }
-  const receipt = await resp.json();
-  return `https://gateway.irys.xyz/${receipt.id}`;
+  // A normal upload answers with JSON ({id, ...}). Uploading the exact same bytes again
+  // (same wallet, same content — e.g. retrying a launch after a later step failed)
+  // answers `201 text/plain: "Transaction <id> already received"`. That is a success:
+  // the data is already stored under that id.
+  const text = await resp.text();
+  let id;
+  try {
+    id = JSON.parse(text).id;
+  } catch {
+    id = /^Transaction (\S+) already received/.exec(text)?.[1];
+  }
+  if (!id) throw new Error(`Irys upload returned an unexpected reply: ${text.slice(0, 120)}`);
+  return `https://gateway.irys.xyz/${id}`;
 }
 
 // Irys uploads under 100 KiB are free; bigger ones need a funded Irys balance.
