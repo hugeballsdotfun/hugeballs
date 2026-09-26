@@ -54,7 +54,7 @@ export function makeCustodial({ web3, splToken, connection, operator, pump, deco
     new TransactionInstruction({
       programId: new PublicKey(MEMO_PROGRAM),
       keys: [{ pubkey: new PublicKey(signer), isSigner: true, isWritable: false }],
-      data: Buffer.from(text, "utf-8"),
+      data: typeof Buffer !== "undefined" ? Buffer.from(text, "utf-8") : new TextEncoder().encode(text),
     });
 
   // create_v2 + collateral transfer to the operator + bond memo, one transaction.

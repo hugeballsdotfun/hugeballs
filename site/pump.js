@@ -29,6 +29,10 @@ const CURVE_DISCRIMINATOR = [23, 183, 248, 55, 96, 216, 172, 96];
 const GLOBAL_FEE_RECIPIENTS_OFFSET = 162;
 const GLOBAL_BUYBACK_RECIPIENTS_OFFSET = 741;
 
+// Node has a global Buffer; browsers don't. web3.js accepts plain bytes for
+// instruction data, so only wrap in a Buffer where one exists (the Node scripts).
+const asData = (bytes) => (typeof Buffer !== "undefined" ? Buffer.from(bytes) : bytes);
+
 const te = new TextEncoder();
 const u32 = (n) => Uint8Array.of(n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >>> 24) & 255);
 function concat(...parts) {
@@ -140,7 +144,7 @@ export function makeBuilders({ web3, splToken, program, BN }) {
     const m = (pubkey, isSigner, isWritable) => ({ pubkey, isSigner, isWritable });
     return new TransactionInstruction({
       programId: PUMP,
-      data: Buffer.from(data),
+      data: asData(data),
       keys: [
         m(mint, true, true),
         m(pda([te.encode("mint-authority")], PUMP), false, false),
@@ -278,7 +282,7 @@ export function makeBuilders({ web3, splToken, program, BN }) {
       createAssociatedTokenAccountIdempotentInstruction(a.user, a.userAta, a.user, a.mint, TOKEN_2022_PROGRAM_ID),
       new TransactionInstruction({
         programId: PUMP,
-        data: Buffer.from(data),
+        data: asData(data),
         keys: [
           meta(pk(PUMP_GLOBAL), false, false),
           meta(a.feeRecipient, false, true),
@@ -308,7 +312,7 @@ export function makeBuilders({ web3, splToken, program, BN }) {
     const data = concat(Uint8Array.from(SELL_DISCRIMINATOR), u64le(tokenAmount), u64le(minSolOut));
     return new TransactionInstruction({
       programId: PUMP,
-      data: Buffer.from(data),
+      data: asData(data),
       keys: [
         meta(pk(PUMP_GLOBAL), false, false),
         meta(a.feeRecipient, false, true),
