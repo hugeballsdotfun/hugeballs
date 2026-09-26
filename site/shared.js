@@ -15,6 +15,7 @@ import { getWallets } from "https://esm.sh/@wallet-standard/app@1.1.0";
 import { IDL } from "./idl.js";
 import { makeCustodial, OPERATORS, BOND_SECONDS, MIN_COLLATERAL_LAMPORTS } from "./custodial.js";
 import { MAINNET_RPC_URL, MAINNET_WS_URL } from "./config.js";
+import { tradesFromTransaction, mcapAfter } from "./events.js";
 import { makeBuilders, decodeCurve, marketCapLamports, targetReached, estimateBuyTokens, estimateSellLamports, applySlippage, PUMP_PROGRAM } from "./pump.js";
 export { web3, anchor, splToken, decodeCurve, marketCapLamports, targetReached, estimateBuyTokens, estimateSellLamports, applySlippage };
 
@@ -192,10 +193,11 @@ function deserializeLikeTx(originalTx, bytes) {
 // with a different quirk than the legacy shape) to the same
 // {publicKey, signTransaction, signAllTransactions, signMessage,
 // sendTransaction} interface the rest of this app and Anchor expect.
-async function connectStandardWallet(standardWallet) {
+async function connectStandardWallet(standardWallet, silent = false) {
   const connectFeature = standardWallet.features["standard:connect"];
   if (!connectFeature) throw new Error(`${standardWallet.name} doesn't support connecting.`);
-  const { accounts } = await connectFeature.connect();
+  // silent = reconnect without a popup, only if this site was already approved in the wallet.
+  const { accounts } = await connectFeature.connect(silent ? { silent: true } : undefined);
   if (!accounts.length) throw new Error("No account returned by the wallet.");
   const account = accounts[0];
   const publicKey = new web3.PublicKey(account.publicKey);
@@ -245,12 +247,14 @@ async function connectStandardWallet(standardWallet) {
   };
 }
 
-export async function connectWallet(entry) {
+const WALLET_KEY = "balls_wallet";
+
+export async function connectWallet(entry, { silent = false } = {}) {
   if (entry.isStandard) {
-    wallet = await connectStandardWallet(entry.standardWallet);
+    wallet = await connectStandardWallet(entry.standardWallet, silent);
   } else {
     const providerEntry = entry;
-    const resp = await providerEntry.provider.connect();
+    const resp = await providerEntry.provider.connect(silent ? { onlyIfTrusted: true } : undefined);
     const publicKey = resp?.publicKey ?? providerEntry.provider.publicKey;
     wallet = {
       publicKey,
@@ -271,17 +275,23 @@ export async function connectWallet(entry) {
       sendTransaction: (tx, conn, opts) => providerEntry.provider.sendTransaction(tx, conn, opts),
     };
   }
+  try {
+    localStorage.setItem(WALLET_KEY, entry.name);
+  } catch {}
   const anchorProvider = new anchor.AnchorProvider(connection, wallet, { commitment: "confirmed" });
   program = new anchor.Program(IDL, anchorProvider);
 
   updateConnectButton();
-  showToast(`Connected to ${entry.name}`);
+  if (!silent) showToast(`Connected to ${entry.name}`);
   await notifyWalletChange();
 }
 
 export async function disconnectWallet() {
   wallet = null;
   program = null;
+  try {
+    localStorage.removeItem(WALLET_KEY);
+  } catch {}
   updateConnectButton();
   await notifyWalletChange();
 }
@@ -368,6 +378,8 @@ export function initNav() {
     document.getElementById("walletModal").hidden = true;
   });
 
+  autoConnect();
+
   // Wallets can register themselves (Wallet Standard) at any point after
   // page load, not just before our first check — a plain one-shot timeout
   // can miss one that's slow to inject. The registry's own event fires
@@ -377,6 +389,29 @@ export function initNav() {
       btn.title = "Wallet detected — click to connect";
     }
   });
+}
+
+// Remembers which wallet was connected and reconnects it on every page load, without a popup,
+// as long as the wallet still trusts this site. Wallets register themselves a moment after
+// page load, so this waits briefly for the saved one to appear.
+async function autoConnect() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(WALLET_KEY);
+  } catch {}
+  if (!saved || wallet) return;
+  for (let i = 0; i < 20 && !wallet; i++) {
+    const entry = detectWallets().find((w) => w.name === saved);
+    if (entry) {
+      try {
+        await connectWallet(entry, { silent: true });
+      } catch (err) {
+        console.warn("Silent wallet reconnect didn't go through:", err?.message || err);
+      }
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
 }
 
 function openWalletPicker(available) {
@@ -584,6 +619,15 @@ export function parseUsd(text) {
 
 export function usdToLamports(usd, solUsdPrice) {
   return BigInt(Math.round((usd / solUsdPrice) * 1e9));
+}
+
+// "12s ago", "5m ago", "3h ago", "2d ago"
+export function timeAgoText(unix) {
+  const d = Math.max(0, Math.floor(Date.now() / 1000) - unix);
+  if (d < 60) return `${d}s ago`;
+  if (d < 3600) return `${Math.floor(d / 60)}m ago`;
+  if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
+  return `${Math.floor(d / 86400)}d ago`;
 }
 
 export function timeLeftText(deadlineUnix) {
@@ -961,7 +1005,7 @@ export async function fetchBalances(mint) {
 // Buy `spendSol` SOL worth of the coin, reverting if fewer than the
 // slippage-adjusted estimate come back. `creator` is the coin's pump.fun
 // creator (= the bond's founder).
-export async function buyCoin({ mint, creator, spendSol, slippageBps = 500 }) {
+export async function buyCoin({ mint, creator, spendSol, slippageBps = 500, onStep = () => {} }) {
   if (!program || !wallet) throw new Error("Connect a wallet first.");
   const spend = solToLamports(spendSol);
   if (!spend || spend <= 0n) throw new Error("Enter an amount of SOL to spend.");
@@ -976,11 +1020,11 @@ export async function buyCoin({ mint, creator, spendSol, slippageBps = 500 }) {
     spendLamports: spend,
     minTokensOut: minOut,
   });
-  return sendTx([...(await priorityIxs()), ...ixs]);
+  return sendTx([...(await priorityIxs()), ...ixs], [], onStep);
 }
 
 // Sell `tokenAmountRaw` (BigInt, raw units) of the coin.
-export async function sellCoin({ mint, creator, tokenAmountRaw, slippageBps = 500 }) {
+export async function sellCoin({ mint, creator, tokenAmountRaw, slippageBps = 500, onStep = () => {} }) {
   if (!program || !wallet) throw new Error("Connect a wallet first.");
   const amount = BigInt(tokenAmountRaw);
   if (amount <= 0n) throw new Error("Enter an amount of the coin to sell.");
@@ -995,7 +1039,7 @@ export async function sellCoin({ mint, creator, tokenAmountRaw, slippageBps = 50
     tokenAmount: amount,
     minSolOut: minOut,
   });
-  return sendTx([...(await priorityIxs()), ix]);
+  return sendTx([...(await priorityIxs()), ix], [], onStep);
 }
 
 // The wallets allowed to trigger burns (admin "resolver" + automated
@@ -1068,4 +1112,88 @@ export function computeStats(views) {
     hitCount: views.filter((v) => v.state === "claimed").length,
     total: views.length,
   };
+}
+
+// ---------------------------------------------------------------------
+// Trades: every buy/sell of a coin, read from pump.fun's on-chain TradeEvent (see events.js).
+// Confirmed transactions never change, so each one is fetched once and cached per coin.
+// ---------------------------------------------------------------------
+const b58 = () => anchor.utils.bytes.bs58;
+const eventHelpers = {
+  toBase58: (bytes) => b58().encode(bytes),
+  decodeBase58: (str) => b58().decode(str),
+  base64ToBytes: (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0)),
+};
+const tradeCacheKey = (mint) => `balls_trades_v1_${NETWORK}_${mint}`;
+const packTrade = (t) => ({ ...t, sol: t.sol.toString(), tokens: t.tokens.toString(), vs: t.vs.toString(), vt: t.vt.toString() });
+const unpackTrade = (t) => ({ ...t, sol: BigInt(t.sol), tokens: BigInt(t.tokens), vs: BigInt(t.vs), vt: BigInt(t.vt) });
+
+// Newest first. Returns [{sig, time, isBuy, user, sol, tokens, vs, vt, mcap}].
+// Provider plans rate-limit requests per second, and every transaction in a batch counts,
+// so missing transactions are fetched in small chunks with a pause between them, and
+// `onProgress(trades)` is called after each chunk so the page fills in while it loads.
+// Anything already cached (transactions never change) costs nothing.
+const TRADE_CHUNK = 8;
+const TRADE_CHUNK_PAUSE_MS = 700;
+export async function fetchCoinTrades(mint, limit = 80, onProgress = null) {
+  let cache = {};
+  try {
+    cache = JSON.parse(localStorage.getItem(tradeCacheKey(mint)) || "{}");
+  } catch {}
+  const curve = builders().pdas.pumpCurve(mint);
+  const sigs = (await connection.getSignaturesForAddress(curve, { limit }, "confirmed")).filter((x) => !x.err);
+
+  const assemble = () => {
+    const out = [];
+    for (const x of sigs) for (const t of cache[x.signature] || []) out.push(unpackTrade(t));
+    for (const t of out) t.mcap = mcapAfter({ virtualSolReserves: t.vs, virtualTokenReserves: t.vt });
+    return out.sort((a, c) => c.time - a.time);
+  };
+  const save = () => {
+    try {
+      const keys = Object.keys(cache);
+      if (keys.length > 600) for (const k of keys.slice(0, keys.length - 600)) delete cache[k];
+      localStorage.setItem(tradeCacheKey(mint), JSON.stringify(cache));
+    } catch {}
+  };
+
+  const missing = sigs.filter((x) => !(x.signature in cache));
+  if (missing.length && onProgress) onProgress(assemble()); // show what's cached straight away
+  for (let i = 0; i < missing.length; i += TRADE_CHUNK) {
+    const chunk = missing.slice(i, i + TRADE_CHUNK);
+    let txs;
+    try {
+      txs = await connection.getTransactions(chunk.map((x) => x.signature), { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+    } catch (err) {
+      console.warn("Trade batch failed, retrying one by one", err?.message || err);
+      txs = [];
+      for (const x of chunk) {
+        txs.push(await connection.getTransaction(x.signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" }).catch(() => null));
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    }
+    chunk.forEach((x, idx) => {
+      const tx = txs[idx];
+      if (!tx) return; // not available yet: tried again on the next refresh
+      const events = tradesFromTransaction(tx, mint, eventHelpers);
+      // Cache by signature, including "no trade in this tx" (coin creation, etc.) as an empty list.
+      cache[x.signature] = events.map((ev) =>
+        packTrade({
+          sig: x.signature,
+          time: ev.timestamp || x.blockTime,
+          isBuy: ev.isBuy,
+          user: ev.user,
+          sol: ev.solAmount,
+          tokens: ev.tokenAmount,
+          vs: ev.virtualSolReserves,
+          vt: ev.virtualTokenReserves,
+        })
+      );
+    });
+    save();
+    if (onProgress) onProgress(assemble());
+    if (i + TRADE_CHUNK < missing.length) await new Promise((r) => setTimeout(r, TRADE_CHUNK_PAUSE_MS));
+  }
+  save();
+  return assemble();
 }

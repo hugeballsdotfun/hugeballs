@@ -68,10 +68,40 @@
 
     <div class="token-detail-grid">
       <div>
+        <div class="card detail-section" id="chartCard">
+          <div class="detail-head">
+            <h3>Market cap</h3>
+            <div class="chart-tabs" id="chartTabs">
+              <button type="button" class="chart-tab" data-window="3600">1H</button>
+              <button type="button" class="chart-tab" data-window="21600">6H</button>
+              <button type="button" class="chart-tab" data-window="86400">24H</button>
+              <button type="button" class="chart-tab selected" data-window="0">ALL</button>
+            </div>
+          </div>
+          <div class="chart-wrap" id="chartWrap">
+            <svg id="priceChart" viewBox="0 0 640 260" preserveAspectRatio="none" role="img" aria-label="Market cap over time"></svg>
+            <div class="chart-tip" id="chartTip" hidden></div>
+            <div class="chart-empty" id="chartEmpty" hidden>No trades yet.</div>
+          </div>
+          <div class="chart-legend"><span><i class="dot buy"></i>Buy</span><span><i class="dot sell"></i>Sell</span><span><i class="dash"></i>Target</span></div>
+        </div>
+
         <div class="card detail-section">
           <h3>The ball meter</h3>
           <div class="meter" id="meter"><div class="meter-fill" id="progressBar" style="width:0%"></div><span class="meter-flag"></span></div>
           <p class="hint" id="progressText" style="margin-top:12px;"></p>
+        </div>
+
+        <div class="card detail-section" id="tradesCard">
+          <h3>Trades</h3>
+          <div class="tablewrap">
+            <table class="trades">
+              <thead><tr><th>Account</th><th>Type</th><th class="num">SOL</th><th class="num">Tokens</th><th class="num">Time</th><th class="num">Tx</th></tr></thead>
+              <tbody id="tradesBody"></tbody>
+            </table>
+          </div>
+          <p class="hint" id="tradesNote" style="margin-top:10px;">Loading trades…</p>
+          <button type="button" class="btn full" id="tradesMore" hidden style="margin-top:10px;">Show more</button>
         </div>
 
         <div class="card detail-section">
