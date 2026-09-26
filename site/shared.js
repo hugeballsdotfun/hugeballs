@@ -626,15 +626,99 @@ function bondView(bondAccount, curve) {
 
 
 
-// Mainnet transactions get a small priority fee so they land under load
-// (~0.00004 SOL). Devnet doesn't need it.
-function priorityIxs() {
-  return NETWORK === "mainnet"
+// ---------------------------------------------------------------------
+// Sending transactions robustly.
+//
+// A transaction that is accepted by an RPC node can still never land: under load
+// low-fee transactions get dropped, and a single broadcast is not retried. So:
+//   1. price the priority fee off what the network is paying right now (mainnet);
+//   2. let the WALLET sign first and add any extra signer (a new coin's mint)
+//      afterwards, over the final message — Phantom may modify a transaction
+//      before signing, which would invalidate a signature added earlier;
+//   3. broadcast, then keep re-broadcasting the same signed transaction every
+//      ~2s and poll its status until it confirms or its blockhash expires.
+// No WebSocket is involved, so nothing depends on a subscription connecting.
+// ---------------------------------------------------------------------
+let priorityCache = null;
+async function priorityMicroLamports() {
+  if (NETWORK !== "mainnet") return 0;
+  if (priorityCache && Date.now() - priorityCache.at < 30_000) return priorityCache.v;
+  let v = 200_000;
+  try {
+    const fees = (await connection.getRecentPrioritizationFees())
+      .map((f) => f.prioritizationFee)
+      .filter((x) => x > 0)
+      .sort((x, y) => x - y);
+    if (fees.length) v = fees[Math.floor(fees.length * 0.75)]; // 75th percentile: lands reliably without overpaying
+  } catch (err) {
+    console.warn("Could not read recent priority fees, using a default", err);
+  }
+  v = Math.min(Math.max(v, 100_000), 3_000_000); // floor ~0.00004 SOL, cap ~0.0012 SOL for a 400k-unit tx
+  priorityCache = { v, at: Date.now() };
+  return v;
+}
+
+async function priorityIxs(units = 400_000) {
+  const price = await priorityMicroLamports();
+  return price
     ? [
-        web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
-        web3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100_000 }),
+        web3.ComputeBudgetProgram.setComputeUnitLimit({ units }),
+        web3.ComputeBudgetProgram.setComputeUnitPrice({ microLamports: price }),
       ]
     : [];
+}
+
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// `onStep(text)` (optional) reports progress for the UI.
+export async function sendTx(instructions, extraSigners = [], onStep = () => {}) {
+  if (!wallet) throw new Error("Connect a wallet first.");
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+  const tx = new web3.Transaction({ feePayer: wallet.publicKey, blockhash, lastValidBlockHeight }).add(...instructions);
+
+  onStep("Approve in your wallet…");
+  const signed = await wallet.signTransaction(tx); // wallet first
+  for (const kp of extraSigners) signed.partialSign(kp); // then the new coin's mint
+  const raw = signed.serialize();
+
+  onStep("Sending…");
+  let signature;
+  try {
+    // First broadcast keeps the RPC's own preflight, so an invalid transaction fails
+    // immediately with a readable error instead of silently never landing.
+    signature = await connection.sendRawTransaction(raw, { skipPreflight: false, preflightCommitment: "confirmed", maxRetries: 0 });
+  } catch (err) {
+    const msg = String(err?.message || err);
+    console.warn("sendRawTransaction failed:", msg);
+    if (/found no record of a prior credit|insufficient lamports|InsufficientFundsForFee/i.test(msg)) {
+      throw new Error("Not enough SOL in your wallet for this transaction plus network fees.");
+    }
+    if (/insufficient funds for rent/i.test(msg)) {
+      throw new Error("This transaction would leave an account below the minimum balance Solana requires. Try a larger amount.");
+    }
+    if (/blockhash not found|expired/i.test(msg)) throw new Error("The network rejected the transaction (expired). Please try again.");
+    const detail = /Message: ([^\n]+)/.exec(msg)?.[1] || msg.split("\n")[0];
+    throw new Error(`The network rejected the transaction: ${detail.slice(0, 200)}`);
+  }
+
+  onStep("Confirming on-chain…");
+  const started = Date.now();
+  for (;;) {
+    const { value } = await connection.getSignatureStatuses([signature]);
+    const st = value[0];
+    if (st?.err) throw new Error(`The transaction failed on-chain (${JSON.stringify(st.err)}). No funds were spent beyond the network fee.`);
+    if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) return signature;
+
+    const height = await connection.getBlockHeight("confirmed");
+    if (height > lastValidBlockHeight || Date.now() - started > 120_000) {
+      const last = (await connection.getSignatureStatuses([signature], { searchTransactionHistory: true })).value[0];
+      if (last && !last.err && last.confirmationStatus) return signature; // landed at the last moment
+      throw new Error("The network didn't confirm the transaction in time, so it expired and nothing was executed. Please try again.");
+    }
+    // Same signed bytes again: harmless if it already landed, a second chance if it was dropped.
+    connection.sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 }).catch(() => {});
+    await sleepMs(2000);
+  }
 }
 
 // Dry-run a transaction before asking the wallet to sign it, so a launch that
@@ -764,7 +848,7 @@ export async function fetchCoinMetadata(mint) {
 // there is never a moment where the coin exists un-bonded. The wallet signs
 // once; the fresh mint keypair co-signs.
 // ---------------------------------------------------------------------
-export async function launchCoin({ name, symbol, description, imageFile, links = {}, targetSol, targetLamports, collateralSol }) {
+export async function launchCoin({ name, symbol, description, imageFile, links = {}, targetSol, targetLamports, collateralSol, onStep = () => {} }) {
   if (!program || !wallet) throw new Error("Connect a wallet first.");
   const target = targetLamports ?? solToLamports(targetSol);
   const collateral = solToLamports(collateralSol);
@@ -786,9 +870,9 @@ export async function launchCoin({ name, symbol, description, imageFile, links =
       collateral,
       nowUnix: Math.floor(Date.now() / 1000),
     });
-    const all = [...priorityIxs(), ...ixs];
+    const all = [...(await priorityIxs()), ...ixs];
     await preflight(all, wallet.publicKey);
-    const sig = await program.provider.sendAndConfirm(new web3.Transaction().add(...all), [mint]);
+    const sig = await sendTx(all, [mint], onStep);
     return { txSig: sig, mint: mint.publicKey.toBase58() };
   }
   const b = builders();
@@ -799,15 +883,16 @@ export async function launchCoin({ name, symbol, description, imageFile, links =
     targetLamports: target,
     collateralLamports: collateral,
   });
-  const all = [...priorityIxs(), createIx, bondIx];
+  const all = [...(await priorityIxs()), createIx, bondIx];
   await preflight(all, wallet.publicKey);
-  const sig = await program.provider.sendAndConfirm(new web3.Transaction().add(...all), [mint]);
+  const sig = await sendTx(all, [mint], onStep);
   return { txSig: sig, mint: mint.publicKey.toBase58() };
 }
 
 export async function claimBond(mint) {
   if (!program || !wallet) throw new Error("Connect a wallet first.");
-  return builders().claimBuilder({ founder: wallet.publicKey, mint }).preInstructions(priorityIxs()).rpc();
+  const tx = await builders().claimBuilder({ founder: wallet.publicKey, mint }).transaction();
+  return sendTx([...(await priorityIxs()), ...tx.instructions]);
 }
 
 // Permissionless: anyone can burn an expired, unmet bond.
@@ -815,7 +900,7 @@ export async function resolveBond(mint, founder, creator) {
   if (!program || !wallet) throw new Error("Connect a wallet first.");
   const globalInfo = await connection.getAccountInfo(new web3.PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf"));
   if (!globalInfo) throw new Error("Couldn't read pump.fun's global config.");
-  return builders()
+  const tx = await builders()
     .resolveBuilder({
       resolver: wallet.publicKey,
       mint,
@@ -823,8 +908,8 @@ export async function resolveBond(mint, founder, creator) {
       globalData: new Uint8Array(globalInfo.data),
       creator: creator || founder,
     })
-    .preInstructions(priorityIxs())
-    .rpc();
+    .transaction();
+  return sendTx([...(await priorityIxs()), ...tx.instructions]);
 }
 
 // Where a brand-new pump.fun coin's market cap starts, read from pump.fun's
@@ -891,7 +976,7 @@ export async function buyCoin({ mint, creator, spendSol, slippageBps = 500 }) {
     spendLamports: spend,
     minTokensOut: minOut,
   });
-  return program.provider.sendAndConfirm(new web3.Transaction().add(...priorityIxs(), ...ixs), []);
+  return sendTx([...(await priorityIxs()), ...ixs]);
 }
 
 // Sell `tokenAmountRaw` (BigInt, raw units) of the coin.
@@ -910,7 +995,7 @@ export async function sellCoin({ mint, creator, tokenAmountRaw, slippageBps = 50
     tokenAmount: amount,
     minSolOut: minOut,
   });
-  return program.provider.sendAndConfirm(new web3.Transaction().add(...priorityIxs(), ix), []);
+  return sendTx([...(await priorityIxs()), ix]);
 }
 
 // The wallets allowed to trigger burns (admin "resolver" + automated
@@ -936,7 +1021,7 @@ export const isOperatorWallet = () => !!wallet && wallet.publicKey.toBase58() ==
 export async function operatorReturn(view) {
   if (!isOperatorWallet()) throw new Error("Connect the Balls operator wallet.");
   const ixs = custodial().returnIxs({ mint: view.mint, founder: view.founder, collateral: view.collateral });
-  return program.provider.sendAndConfirm(new web3.Transaction().add(...priorityIxs(), ...ixs), []);
+  return sendTx([...(await priorityIxs()), ...ixs]);
 }
 
 // Deadline missed: buy the coin with the collateral, then burn what was
@@ -963,13 +1048,13 @@ export async function operatorBurn(view, onStep = () => {}) {
       globalData: await pumpGlobalData(),
       minTokensOut: 1n,
     });
-    await program.provider.sendAndConfirm(new web3.Transaction().add(...priorityIxs(), ...ixs), []);
+    await sendTx([...(await priorityIxs()), ...ixs]);
     await new Promise((r) => setTimeout(r, 2500));
   }
   const amount = await held();
   if (amount === 0n) throw new Error("The buy didn't deliver any tokens — nothing to burn.");
   onStep("Step 2/2: burning the tokens…");
-  return program.provider.sendAndConfirm(new web3.Transaction().add(...priorityIxs(), ...c.burnIxs({ mint: view.mint, amount })), []);
+  return sendTx([...(await priorityIxs()), ...c.burnIxs({ mint: view.mint, amount })]);
 }
 
 // Headline numbers for the home page, from the verified bond list.

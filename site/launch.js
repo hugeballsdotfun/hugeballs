@@ -136,7 +136,7 @@ async function initLaunchForm() {
       btn.textContent = imageFile ? "Uploading image…" : "Uploading metadata…";
       // launchCoin uploads metadata first, then asks the wallet to sign the
       // combined create + bond transaction.
-      const { txSig, mint } = await launchCoin({ name, symbol, description, imageFile, links: parsed.links, targetLamports: target, collateralSol });
+      const { txSig, mint } = await launchCoin({ name, symbol, description, imageFile, links: parsed.links, targetLamports: target, collateralSol, onStep: (t) => (btn.textContent = t) });
       console.log("launch tx", txSig, "mint", mint);
       showToast(`${symbol} is live, and the dev has the balls to back it. Redirecting…`);
       window.location.href = `coin.html?mint=${mint}`;
