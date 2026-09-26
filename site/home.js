@@ -145,8 +145,8 @@ function card(v) {
         <span>Market cap <b>${usdText(v.mcap)}</b></span>
         <span>Target <b>${usdText(v.target)}</b></span>
       </div>
-      <div class="meter ${v.state === "burned" ? "burned" : ""}"><div class="meter-fill" style="width:${Math.max(pct, 2)}%"></div><span class="meter-flag"></span></div>
-      <div class="cc-progress-bot"><span>${pct}% of the way there</span><span>${v.target > v.mcap ? usdText(v.target - v.mcap) + " to go" : "Target reached"}</span></div>
+      <div class="meter ${v.state === "burned" ? "burned" : v.state === "claimed" || v.state === "reached" ? "hit" : ""}"><div class="meter-fill" style="width:${Math.max(pct, 2)}%"></div><span class="meter-flag"></span></div>
+      <div class="cc-progress-bot"><span>${pct}% of the way there</span><span>${v.state === "claimed" || v.target <= v.mcap ? "Target reached" : usdText(v.target - v.mcap) + " to go"}</span></div>
     </div>
     <div class="cc-foot">${foot}</div>`;
   const m = meta.get(v.mint);

@@ -416,3 +416,6 @@ table.trades a:hover{color:var(--lime);}
 .gt-links{margin:10px 0 0;font-size:12.5px;}
 .gt-links a{color:var(--lime);font-weight:700;margin-right:14px;}
 @media (max-width:640px){.gt-embed iframe{height:340px;}}
+
+/* target hit: the bar turns lime and stays full */
+.hit .meter-fill{background:linear-gradient(180deg,#eaff9a 0%,#c8ff3d 32%,#8fd300 62%,#cbf25a 100%);box-shadow:0 0 14px rgba(184,242,39,.55),inset 0 1px 0 rgba(255,255,255,.7);}

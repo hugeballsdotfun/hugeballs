@@ -150,8 +150,11 @@ function paint() {
   const pct = Math.round(view.progress * 1000) / 10;
   $("progressBar").style.width = `${Math.max(pct, 1)}%`;
   $("meter").classList.toggle("burned", view.state === "burned");
+  $("meter").classList.toggle("hit", view.state === "claimed" || view.state === "reached");
   $("progressText").textContent =
-    `Market cap ${usdText(view.mcap)} / ${usdText(view.target)} (${pct}%)${view.complete ? " — graduated from the pump.fun curve" : ""}`;
+    view.state === "claimed"
+      ? `Target reached: ${usdText(view.target)}. The founder got their SOL back.`
+      : `Market cap ${usdText(view.mcap)} / ${usdText(view.target)} (${pct}%)${view.complete ? " — graduated from the pump.fun curve" : ""}`;
 
   $("actionText").textContent = TEXT[view.state] || "";
   $("actionText").classList.toggle("win", view.state === "reached" || view.state === "claimed");

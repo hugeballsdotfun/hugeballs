@@ -660,7 +660,8 @@ function bondView(bondAccount, curve) {
     collateral: BigInt(bondAccount.collateral.toString()),
     deadline,
     mcap,
-    progress: target > 0n ? Math.min(1, Number((mcap * 10000n) / target) / 10000) : 0,
+    // Once the founder has claimed, the target was hit for good: the bar stays full even if the price falls back.
+    progress: state === "claimed" ? 1 : target > 0n ? Math.min(1, Number((mcap * 10000n) / target) / 10000) : 0,
     complete: !!curve?.complete,
     state,
     createdAt: deadline - BOND_SECONDS,
