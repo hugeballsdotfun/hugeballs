@@ -1,0 +1,17 @@
+{
+  "name": "balls-keeper",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Triggers due burns of expired, unmet Balls bonds. Holds no funds beyond a little SOL for fees.",
+  "scripts": {
+    "start": "node keeper.mjs",
+    "sync": "cp ../site/pump.js ../site/idl.js ."
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "0.31.1",
+    "@solana/spl-token": "0.4.13",
+    "@solana/web3.js": "1.98.4",
+    "bn.js": "^5.2.1"
+  }
+}

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balls — Real devs lock real SOL</title>
+<meta name="description" content="Real devs only. Launch a pump.fun coin with your own SOL locked behind a market cap target. Hit it and claim it back, miss it and it burns.">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="glow"></div>
+
+<header>
+  <nav>
+    <a class="logo" href="index.html"><img class="logo-mark" src="logo.png" alt="Balls">Balls</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="active">Explore</a>
+      <a href="launch.html">Launch</a>
+      <a href="docs.html">Docs</a>
+      <a href="legal.html">Legal</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="hero-wrap">
+  <div class="hero">
+    <div class="eyebrow">Real devs only</div>
+    <h1>Show us how big your <span class="accent-lime">balls</span> are<span class="accent-fire">.</span></h1>
+    <p class="lead">Anyone can launch a coin and promise the moon. <b>Real devs put their own SOL behind it.</b>
+      Set a market cap target, lock your bond, and let the whole market watch.
+      <b>Hit it and you claim your SOL back.</b> <b>Miss it and it burns.</b> No bond, no launch.</p>
+    <div class="hero-actions">
+      <a href="launch.html" class="btn btn-primary">Launch with your balls</a>
+      <a href="docs.html" class="btn">How it works</a>
+    </div>
+  </div>
+  <div class="hero-art"><img src="logo-hero.webp" alt="Balls" width="380"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat fire"><div class="v" id="stBurned">—</div><div class="l">SOL burned</div></div>
+    <div class="stat lime"><div class="v" id="stReturned">—</div><div class="l">SOL returned</div></div>
+    <div class="stat"><div class="v" id="stLive">—</div><div class="l">Live bonds</div></div>
+    <div class="stat"><div class="v" id="stTotal">—</div><div class="l">Coins launched</div></div>
+  </div>
+</div>
+
+<div class="ticker" id="ticker" hidden><div class="ticker-track" id="tickerTrack"></div></div>
+
+<section id="coins" style="padding-top:44px;">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">The wall of balls</div>
+      <h2>Real devs. Real bonds. Real money on the line.</h2>
+    </div>
+    <div class="controls">
+      <input type="search" id="coinSearch" placeholder="Search by name, symbol or mint address…">
+      <select id="sortSelect" class="tab" style="padding:9px 12px;" aria-label="Sort">
+        <option value="closest">Sort: closest to target</option>
+        <option value="newest">Sort: newest</option>
+        <option value="stake">Sort: biggest bond</option>
+        <option value="deadline">Sort: ending soon</option>
+      </select>
+    </div>
+    <div class="tabs" style="margin-bottom:18px;">
+      <button type="button" class="tab selected" data-filter="all">All</button>
+      <button type="button" class="tab" data-filter="live">Live</button>
+      <button type="button" class="tab" data-filter="hit">Hit the target</button>
+      <button type="button" class="tab" data-filter="burned">Burned</button>
+    </div>
+    <div class="grid" id="coinGrid"></div>
+    <p class="hint" id="coinNote" style="margin-top:14px;text-align:center;">Loading…</p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">How it works</div>
+      <h2>Three steps. One of them takes real balls.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">STEP 01</div><h3>Name your number</h3><p>Choose a market cap target and lock real SOL behind it. Yes, real. That's the whole point: no bond, no launch.</p></div>
+      <div class="step"><div class="n">STEP 02</div><h3>Launch &amp; pray</h3><p>Your coin goes live on pump.fun in the same transaction. Trade it here or there — same curve, same liquidity.</p></div>
+      <div class="step"><div class="n">STEP 03</div><h3>Win or burn</h3><p>Hit the target within 48h and you claim your SOL back. Miss, and it buys your own coin and turns to ash. Holders say thanks.</p></div>
+    </div>
+    <div class="cta-band">
+      <div>
+        <h3>Talk is cheap. Bonds aren't.</h3>
+        <p>Every rugger says "trust me". Real devs lock their SOL where everyone can see it. Read exactly how it works before you put yours in.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="docs.html" class="btn">Read the docs</a>
+        <a href="launch.html" class="btn btn-fire">Launch with your balls</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="logo"><img class="logo-mark" src="logo.png" alt="Balls">Balls</div>
+        <p class="hint" style="margin-top:10px;max-width:280px;">Real devs. Real bonds. Coins on pump.fun.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Product</h4>
+          <a href="index.html">Explore</a>
+          <a href="launch.html">Launch</a>
+          <a href="docs.html">Docs</a>
+        </div>
+        <div class="foot-col">
+          <h4>Resources</h4>
+          <a href="docs.html#verify">Verify a bond</a>
+          <a href="legal.html">Legal</a>
+                  </div>
+        <div class="foot-col">
+          <h4>Community</h4>
+          <a href="https://x.com/hugeballsdotfun" target="_blank" rel="noopener">X</a>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      Balls is unreleased software under active development, independent of and not affiliated with pump.fun. Coins launched through Balls are created by third parties and are not endorsed, reviewed or guaranteed by Balls. A founder bond is a public signal that a founder put their own collateral behind a market-cap target — it is not a guarantee of price, liquidity or behaviour. Bond collateral is held by an on-chain escrow program. The program is new and unaudited, and its upgrade authority is currently held by Balls. Nothing on this site is financial advice. Memecoins are extremely volatile and you can lose everything you put in.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="walletModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Connect a wallet</h3>
+      <button class="modal-close" id="walletModalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="wallet-list" id="walletList"></div>
+  </div>
+</div>
+
+<script type="module" src="home.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+[package]
+name = "balls-bond"
+version = "0.1.0"
+description = "Balls founder-bond escrow for pump.fun launches"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "balls_bond"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+# TESTING ONLY: shrinks the bond deadline to 60s so the burn path can be
+# exercised on devnet. Must NEVER be enabled for a mainnet build.
+devnet-short-deadline = []
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token", "token_2022", "associated_token"] }
+# anchor-lang declares solana-program as a loose "^2" range, which resolves
+# to whatever is newest on crates.io at lockfile-generation time. Pinned to
+# 2.2.1 (the oldest version satisfying anchor-spl's spl-pod -> solana-msg
+# ^2.2.1 requirement) so the whole transitive graph below stays on the
+# pre-edition2024 snapshot instead of drifting forward every time the lock
+# is regenerated.
+solana-program = "=2.2.1"
+
+# Pinned transitively via solana-program -> solana-blake3-hasher -> blake3.
+# blake3 1.8.4+ requires digest ^0.11 (-> block-buffer 0.12, edition2024);
+# blake3 1.8.3 avoids that but bumps its OTHER hash dep, constant_time_eq,
+# to ^0.4.2, which is itself edition2024. 1.8.2 is the last version clear
+# of both (constant_time_eq ^0.3.1, digest ^0.10) and still satisfies
+# solana-blake3-hasher's "^1.5.5" requirement. Solana's pinned build
+# toolchain (platform-tools v1.48, cargo 1.79-1.84) can't parse edition2024
+# manifests yet (tracked upstream: anza-xyz/agave#5389) — this whole block
+# of pins is a pure downgrade with no functional change, safe to loosen
+# once platform-tools catches up.
+blake3 = "=1.8.2"
+# Same edition2024 issue (see note above), this time via the confidential-
+# transfer crypto chain (spl-token-2022 -> spl-elgamal-registry -> zeroize).
+zeroize_derive = "=1.4.3"
+# Same issue again, via solana-borsh -> borsh-derive -> proc-macro-crate,
+# which jumped to toml_edit 0.25 (and its edition2024 toml_datetime) in
+# proc-macro-crate 3.5.0.
+proc-macro-crate = "=3.3.0"
+# ...and again one layer down: proc-macro-crate's own toml_edit ^0.22.24
+# pulls indexmap -> hashbrown, and hashbrown 0.16+ is edition2024 too.
+indexmap = "=2.10.0"
+hashbrown = "=0.15.5"
+# Not an edition2024 case but the same root cause (crates.io drifting ahead
+# of Solana's pinned toolchain): 1.13.2+ raised its MSRV to rustc 1.85,
+# newer than platform-tools v1.48's bundled 1.79-1.84.
+unicode-segmentation = "=1.12.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch — Balls</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="glow"></div>
+
+<header>
+  <nav>
+    <a class="logo" href="index.html"><img class="logo-mark" src="logo.png" alt="Balls">Balls</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Explore</a>
+      <a href="launch.html" class="active">Launch</a>
+      <a href="docs.html">Docs</a>
+      <a href="legal.html">Legal</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Launch</div>
+    <h1>Prove you're a real dev.</h1>
+    <p>Anyone can launch a coin. Not everyone has the balls to back it. Pick a market cap target, lock your SOL behind it, and let the whole market watch. Hit it within 48 hours and you claim it back. Miss it and it burns.</p>
+  </div>
+</div>
+
+<section style="padding-top:28px;">
+  <div class="wrap" style="max-width:680px;">
+
+    <div id="launchConnectPrompt" class="card connect-prompt" hidden>
+      <h2>Connect your wallet, dev</h2>
+      <p>You'll sign one transaction that creates the coin on pump.fun and locks your bond in the Balls contract. We never touch your keys.</p>
+      <button class="btn btn-primary" id="launchConnectBtn">Connect Wallet</button>
+    </div>
+
+    <div id="launchFormCard" class="card" style="padding:26px;" hidden>
+      <form id="launchForm" class="form">
+        <label>
+          Coin image (optional)
+          <div class="image-upload">
+            <div class="image-preview" id="imagePreview">No image</div>
+            <div>
+              <input type="file" name="image" id="imageInput" accept="image/*">
+              <p class="hint" style="margin-top:6px;">Stored permanently on Arweave via Irys, paid from your wallet. Big images get shrunk automatically.</p>
+            </div>
+          </div>
+        </label>
+        <label>Name<input name="name" required maxlength="32" placeholder="Drift Racer"></label>
+        <label>Symbol<input name="symbol" required maxlength="10" placeholder="DRIFT"></label>
+        <label>Description (optional)<textarea name="description" maxlength="500" rows="3" placeholder="Why should anyone buy this?"></textarea></label>
+
+        <div class="bond-box">
+          <h3>Your bond <span class="hint" style="font-weight:600;">required. No bond, no launch.</span></h3>
+          <div class="deal">
+            <div class="win"><b>Hit the target</b>within 48h and you can claim your SOL back.</div>
+            <div class="lose"><b>Miss it</b>and your SOL buys your own coin and gets burned.</div>
+          </div>
+          <label>Target market cap (USD)
+            <input name="target" id="targetInput" required inputmode="decimal" placeholder="e.g. 25k" autocomplete="off">
+          </label>
+          <div class="chips" id="targetChips"></div>
+          <p class="hint" id="targetHint"></p>
+          <label>Your bond — SOL you put on the line
+            <input name="collateral" id="collateralInput" required inputmode="decimal" placeholder="e.g. 1" autocomplete="off">
+          </label>
+          <div class="chips" id="collateralChips"></div>
+          <p class="hint" id="collateralHint">The bigger the bond, the bigger the statement. Minimum 0.01 SOL. Locked in the Balls contract in the same transaction.</p>
+        </div>
+
+        <ul class="rules">
+          <li><b>Hit the target</b> within 48 hours and you can claim your SOL back from the contract.</li>
+          <li><b>Miss it</b> and the contract buys your coin with your SOL and burns every token bought. You get nothing back.</li>
+          <li><b>Your SOL is held by a smart contract</b> <span id="operatorAddr"></span>, not by a person. Balls can't withdraw it. Balls does still control upgrades to that contract for now, and it hasn't been audited. <a href="docs.html#trust" style="color:var(--lime-ink);text-decoration:underline;">Read exactly what that means</a></li>
+        </ul>
+        <button type="submit" class="btn btn-fire full" id="launchBtn">Launch with my balls</button>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="logo"><img class="logo-mark" src="logo.png" alt="Balls">Balls</div>
+        <p class="hint" style="margin-top:10px;max-width:280px;">Real devs. Real bonds. Coins on pump.fun.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Product</h4>
+          <a href="index.html">Explore</a>
+          <a href="launch.html">Launch</a>
+          <a href="docs.html">Docs</a>
+        </div>
+        <div class="foot-col">
+          <h4>Resources</h4>
+          <a href="docs.html#verify">Verify a bond</a>
+          <a href="legal.html">Legal</a>
+                  </div>
+        <div class="foot-col">
+          <h4>Community</h4>
+          <a href="https://x.com/hugeballsdotfun" target="_blank" rel="noopener">X</a>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      Balls is unreleased software under active development, independent of and not affiliated with pump.fun. Coins launched through Balls are created by third parties and are not endorsed, reviewed or guaranteed by Balls. A founder bond is a public signal that a founder put their own collateral behind a market-cap target — it is not a guarantee of price, liquidity or behaviour. Bond collateral is held by an on-chain escrow program. The program is new and unaudited, and its upgrade authority is currently held by Balls. Nothing on this site is financial advice. Memecoins are extremely volatile and you can lose everything you put in.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="walletModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Connect a wallet</h3>
+      <button class="modal-close" id="walletModalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="wallet-list" id="walletList"></div>
+  </div>
+</div>
+
+<script type="module" src="launch.js"></script>
+
+</body>
+</html>

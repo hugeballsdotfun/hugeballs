@@ -1,0 +1,20 @@
+# build output
+target/
+node_modules/
+.anchor/
+test-ledger/
+dist/
+
+# never commit keys or local config
+*.json.key
+*keypair*.json
+id.json
+.env
+.env.*
+scripts/.env
+
+# keeper copies these from site/ (see keeper/package.json "sync")
+keeper/pump.js
+keeper/idl.js
+
+.DS_Store

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal — Balls</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="glow"></div>
+
+<header>
+  <nav>
+    <a class="logo" href="index.html"><img class="logo-mark" src="logo.png" alt="Balls">Balls</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Explore</a>
+      <a href="launch.html">Launch</a>
+      <a href="docs.html">Docs</a>
+      <a href="legal.html" class="active">Legal</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Legal</div>
+    <h1>Terms, risk disclosure &amp; privacy</h1>
+    <p>Last updated September 26, 2026. Read this before you connect a wallet, launch a coin, or post a bond on Balls. Bonds are held by an unaudited smart contract that Balls can still upgrade: see section 2.</p>
+  </div>
+</div>
+
+<section style="padding-top:12px;">
+  <div class="wrap legal-layout">
+
+    <nav class="legal-toc">
+      <a href="#terms">1. Terms of Use</a>
+      <a href="#bond">2. How bonds work</a>
+      <a href="#risk">3. Risk Disclosure</a>
+      <a href="#privacy">4. Privacy</a>
+      <a href="#contact">5. Contact</a>
+    </nav>
+
+    <div class="legal-body card">
+
+      <article id="terms" class="legal-section">
+        <h2>1. Terms of Use</h2>
+        <p>Balls is an interface for launching coins on pump.fun with a founder bond held in a smart contract. Balls does not custody your funds or hold your private keys. Every launch, trade and other action on this site is a transaction you sign yourself, sent directly from your own wallet to the Solana network.</p>
+        <p>Balls is independent of, and not affiliated with, pump.fun. Coins launched through this site are created on pump.fun's own program under pump.fun's own rules; Balls has no control over them, over pump.fun's fees, or over any change pump.fun makes to its program. Balls does not review, endorse, vet, or guarantee any coin, its name, symbol, image, or the intentions of whoever created it.</p>
+        <p>You may not use Balls to launch a coin that is fraudulent, impersonates a real project or person without authorization, or is created to solicit funds under false pretenses. You are solely responsible for complying with the laws of your own jurisdiction, including any restrictions on trading digital assets where you live.</p>
+        <p>This software is provided "as is," without warranty of any kind, express or implied. To the maximum extent permitted by law, Balls and its contributors disclaim all liability for any loss arising from your use of this site or the escrow contract, including loss caused by a bug, an exploit, an upgrade of the contract, a change to pump.fun's program, network congestion, or your own error.</p>
+      </article>
+
+      <article id="bond" class="legal-section">
+        <h2>2. How bonds work, and what you are trusting</h2>
+        <p>A founder bond is SOL, chosen by the founder, that they lock behind a market-cap target for their coin. In the same transaction that creates the coin on pump.fun, the SOL moves into a vault owned by the Balls escrow program. Only the wallet that pump.fun recorded as the coin's creator can post a bond for it. The bond carries a market-cap target and a 48-hour deadline.</p>
+        <p>The coin's market cap is read by the contract directly from pump.fun's on-chain bonding-curve account. If it is at or above the target (or the coin has graduated) when the founder claims, the founder receives the bond back. If the deadline passes and the target is not met, the contract uses the bond to buy the coin on pump.fun and burns every token bought; the founder loses the bond. If an expired, unmet bond is not burned within 7 days of its deadline, the founder may reclaim it.</p>
+        <p><strong>What you are still trusting.</strong> The contract has no instruction that lets Balls withdraw a bond. However: (a) the contract is new and has not been independently audited; (b) the contract is upgradeable, and the upgrade key is currently held by Balls, so a future version could in principle behave differently from the one described here; (c) the burn depends on pump.fun's program continuing to work as it does today, and only the Balls keeper and admin wallets can trigger it; and (d) a bond is a signal, not a promise, and does not guarantee a coin's price, liquidity or anyone's future behaviour. A founder can reach a target with their own funds.</p>
+        <p>Balls intends to reduce these assumptions over time (for example by moving the upgrade key to a multisig and later renouncing it). Bonds already posted stay governed by the contract they were posted to.</p>
+      </article>
+
+      <article id="risk" class="legal-section">
+        <h2>3. Risk Disclosure</h2>
+        <p>Digital assets are highly volatile. A coin's price on a bonding curve can move sharply on small trades, and can fall to near zero at any time. You can lose the entire amount you put in, including any bond, which is lost by design if the target is missed. Nothing on this site is a recommendation to buy, sell, or hold anything.</p>
+        <p>The escrow contract is unaudited software. Bugs, exploits, a malicious upgrade, or a change to pump.fun's program could cause bond funds to be lost or locked. Do not post a bond you cannot afford to lose.</p>
+        <p>You are responsible for your own wallet security. Balls never asks for a seed phrase or private key, and no legitimate Balls page ever will. Verify you are on the correct domain before connecting a wallet or signing a transaction.</p>
+      </article>
+
+      <article id="privacy" class="legal-section">
+        <h2>4. Privacy</h2>
+        <p>Balls does not require an account, an email address, or any personal information. Connecting a wallet shares only your public wallet address, which is already public on the Solana blockchain.</p>
+        <p>Every launch, bond, claim and burn is a transaction on the public Solana ledger — visible to anyone, forever, independent of Balls. Coin metadata and images you upload (name, symbol, description, image) are stored on Arweave via Irys, uploaded directly from your own wallet — Balls' own servers never see or hold them.</p>
+        <p>Balls does not use tracking cookies or sell any data, because it does not collect any.</p>
+      </article>
+
+      <article id="contact" class="legal-section">
+        <h2>5. Contact</h2>
+        <p>Questions about these terms can be raised through Balls' community channels linked in the footer below.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<div style="height:60px;"></div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="logo"><img class="logo-mark" src="logo.png" alt="Balls">Balls</div>
+        <p class="hint" style="margin-top:10px;max-width:280px;">Real devs. Real bonds. Coins on pump.fun.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Product</h4>
+          <a href="index.html">Explore</a>
+          <a href="launch.html">Launch</a>
+          <a href="docs.html">Docs</a>
+        </div>
+        <div class="foot-col">
+          <h4>Resources</h4>
+          <a href="docs.html#verify">Verify a bond</a>
+          <a href="legal.html">Legal</a>
+                  </div>
+        <div class="foot-col">
+          <h4>Community</h4>
+          <a href="https://x.com/hugeballsdotfun" target="_blank" rel="noopener">X</a>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      Balls is unreleased software under active development, independent of and not affiliated with pump.fun. Coins launched through Balls are created by third parties and are not endorsed, reviewed or guaranteed by Balls. A founder bond is a public signal that a founder put their own collateral behind a market-cap target — it is not a guarantee of price, liquidity or behaviour. Bond collateral is held by an on-chain escrow program. The program is new and unaudited, and its upgrade authority is currently held by Balls. Nothing on this site is financial advice. Memecoins are extremely volatile and you can lose everything you put in.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="walletModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Connect a wallet</h3>
+      <button class="modal-close" id="walletModalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="wallet-list" id="walletList"></div>
+  </div>
+</div>
+
+<script type="module" src="legal.js"></script>
+
+</body>
+</html>

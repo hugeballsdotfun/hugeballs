@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docs - Balls</title>
+<meta name="description" content="How Balls works: pump.fun coins with a founder bond locked in a smart contract. Hit your market cap target and claim your SOL back, miss it and it burns.">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="glow"></div>
+
+<header>
+  <nav>
+    <a class="logo" href="index.html"><img class="logo-mark" src="logo.png" alt="Balls">Balls</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Explore</a>
+      <a href="launch.html">Launch</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="legal.html">Legal</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-primary" id="connectBtn">Connect Wallet</button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Docs</div>
+    <h1>How Balls works.</h1>
+    <p>The jokes are on the front page. This is the serious part: what real devs commit to, exactly what happens to their SOL, what the smart contract can and can't do, who can still touch what, and how you can check it all yourself.</p>
+  </div>
+
+  <div class="docs-layout">
+    <nav class="docs-toc" aria-label="Docs">
+      <div class="grp">Basics</div>
+      <a href="#what">What is Balls?</a>
+      <a href="#lifecycle">A bond, start to finish</a>
+      <div class="grp">The rules</div>
+      <a href="#target">Target market cap</a>
+      <a href="#collateral">The collateral</a>
+      <a href="#deadline">The 48 hours</a>
+      <a href="#hit">What counts as "hit"</a>
+      <a href="#burn">The burn</a>
+      <a href="#trading">Trading &amp; fees</a>
+      <div class="grp">Trust</div>
+      <a href="#trust">Who can do what</a>
+      <a href="#verify">Verify anything</a>
+      <a href="#risks">Risks &amp; limits</a>
+      <a href="#next">What's next</a>
+      <div class="grp">Reference</div>
+      <a href="#faq">FAQ</a>
+      <a href="#dev">For developers</a>
+      <a href="#glossary">Glossary</a>
+    </nav>
+
+    <div class="docs-body">
+
+      <article class="card doc" id="what">
+        <h2>What is Balls?</h2>
+        <p>Balls is a launchpad with exactly one rule: <b>a founder can't launch a coin without putting their own SOL on the line.</b></p>
+        <p>Coins are created on <b>pump.fun</b>: same bonding curve, same liquidity, same charts. Balls doesn't run its own curve or its own token standard. What Balls adds is a <b>bond</b>. When you launch, you pick a market cap target and lock SOL behind it in a smart contract.</p>
+        <ul>
+          <li><b>Hit the target</b> within 48 hours and you can claim your SOL back.</li>
+          <li><b>Miss it</b> and your SOL is used to buy your own coin on pump.fun, and everything bought is <b>burned</b>.</li>
+        </ul>
+        <p>Why? Because "trust me, I'm not going to rug" is free to say. A bond isn't. It turns a promise into a stake: buyers can see, on-chain, how much the founder stands to lose if the coin doesn't go where they said it would.</p>
+        <div class="callout"><b>What a bond is not.</b> It is not a guarantee that the price goes up, that liquidity stays, or that the founder won't sell. It is a public signal that the founder put money where their mouth is, nothing more.</div>
+      </article>
+
+      <article class="card doc" id="lifecycle">
+        <h2>A bond, start to finish</h2>
+        <div class="flow">
+          <div class="node"><b>1. Launch (one transaction)</b>You fill in the coin (name, symbol, image), a target market cap and a bond amount. You sign <i>one</i> transaction that (a) creates the coin on pump.fun with you as its creator, and (b) locks your bond in the Balls escrow contract, recording the target and a 48-hour deadline.</div>
+          <div class="node"><b>2. Trade (up to 48 hours)</b>The coin trades on pump.fun like any other. You can buy and sell it on Balls or on pump.fun itself, it's the same curve.</div>
+          <div class="node win"><b>3a. Target reached: you claim your SOL back</b>The contract checks the coin's market cap live, on-chain. If it's at or above the target, you claim the bond back to your wallet. The coin carries on as normal.</div>
+          <div class="node lose"><b>3b. Deadline passes, target missed: burn</b>The contract buys your coin on pump.fun using your bond, then burns every token it bought. Supply shrinks, the SOL goes into the curve, and you get nothing back.</div>
+        </div>
+        <p>Every one of those steps is a public Solana transaction, and the coin page shows the on-chain accounts. The <a href="#verify" style="color:var(--lime-ink);text-decoration:underline;">Verify</a> section shows how to check them independently.</p>
+      </article>
+
+      <article class="card doc" id="target">
+        <h2>Target market cap</h2>
+        <p>"Market cap" here is the number pump.fun itself shows: <b>the coin's current price x its total supply</b>. Every coin on pump.fun has a fixed supply of 1,000,000,000 tokens, so market cap is just price scaled up.</p>
+        <p>The contract reads it straight from the coin's pump.fun bonding-curve account on-chain, the same numbers the curve uses to price trades:</p>
+        <pre>market cap (SOL) = virtual SOL reserves x total supply / virtual token reserves</pre>
+        <ul>
+          <li>You enter the target in <b>US dollars</b> (like <code>25k</code>). At launch the site converts it to SOL using the live SOL price, and that SOL amount is what the contract records and checks. Market caps on the site are shown in dollars using the current SOL price, so a target's dollar value moves with SOL's price after launch.</li>
+          <li>A new coin starts at roughly <b>28 SOL</b> of market cap (a few thousand dollars, depending on SOL's price). Your target must be <b>higher than the coin's market cap at launch</b>: a target below the starting line would be reached instantly, and the contract refuses it.</li>
+          <li>The launch page offers quick multipliers (2x, 3x ...) of the starting market cap, so you can see what you're signing up for.</li>
+          <li>If the coin <b>graduates</b> from the pump.fun curve (the curve fills and liquidity moves to PumpSwap, at very roughly 400 SOL of market cap), it counts as having reached any target. See <a href="#hit" style="color:var(--lime-ink);text-decoration:underline;">What counts as "hit"</a>.</li>
+        </ul>
+      </article>
+
+      <article class="card doc" id="collateral">
+        <h2>The collateral</h2>
+        <ul>
+          <li><b>Minimum:</b> 0.01 SOL. There's no maximum. The more you put up, the louder the signal (and the more it hurts to miss).</li>
+          <li><b>Mandatory.</b> The launch form won't build the transaction without a target and a bond. There is no "skip" button.</li>
+          <li><b>It's in SOL.</b> The contract only accepts SOL as a bond.</li>
+          <li><b>One bond per coin, fixed at launch.</b> You can't top it up, lower it, or cancel it afterwards.</li>
+          <li>The bond moves into a vault owned by the contract in the <i>same transaction</i> that creates the coin. If any part of that transaction fails, none of it happens: you never end up with a coin without a bond, or a bond without a coin.</li>
+        </ul>
+        <p>On top of the bond, launching costs a small amount of SOL in network fees and account rent, paid to Solana and pump.fun. <b>Balls takes no fee.</b></p>
+      </article>
+
+      <article class="card doc" id="deadline">
+        <h2>The 48 hours</h2>
+        <p>The clock starts when your launch transaction lands and runs for <b>48 hours</b>. The deadline is stored in the bond account on-chain, and the contract enforces it: nobody can burn a bond before its deadline.</p>
+        <p>The coin page shows the time left as a live countdown. After the deadline:</p>
+        <ul>
+          <li>if the target is <b>met</b>, the bond stays yours to claim, and it can never be burned;</li>
+          <li>if the target is <b>not met</b>, the burn can be triggered, and an automated keeper does it. If the keeper isn't running, the Balls admin wallet can do it by hand.</li>
+        </ul>
+        <div class="callout"><b>If a burn never happens.</b> Suppose an expired, unmet bond is still unburned 7 days after its deadline (for example because pump.fun changed its program and the burn can't run). The contract then lets the founder reclaim it. That grace period is long enough to fix a problem, and short enough that skipping the burn isn't a strategy.</div>
+      </article>
+
+      <article class="card doc" id="hit">
+        <h2>What counts as "hit"</h2>
+        <p>A bond counts as <b>hit</b> if, at the moment it's checked on-chain, either of these is true:</p>
+        <ul>
+          <li>the coin's <b>current market cap is at or above the target</b>, or</li>
+          <li>the coin has <b>graduated</b> from the pump.fun bonding curve.</li>
+        </ul>
+        <p>The check is a <b>live snapshot</b> of the coin's bonding curve. The contract has no record of every price the coin ever touched. In practice:</p>
+        <ul>
+          <li><b>You can claim any time the coin is at or above the target</b> while the bond is still active. That includes after the deadline, as long as nobody has burned it yet. The contract checks the live market cap when you claim.</li>
+          <li>So if your coin touches the target, <b>claim right away</b>. If it falls back below the target before you claim, the claim is refused.</li>
+          <li>A burn can only run when the market cap is <i>below</i> the target at that moment, so a coin that is sitting above its target can't be burned.</li>
+          <li>A target above the graduation market cap can only be met by graduating.</li>
+        </ul>
+        <p>Founders can buy their own coin to push it toward the target. Nothing stops that: it costs real money (and pump.fun's fees), and buyers can see who holds what. A bond is a signal, and like any signal it can be gamed by someone willing to pay for it.</p>
+      </article>
+
+      <article class="card doc" id="burn">
+        <h2>The burn</h2>
+        <p>If the deadline passes and the target is not met, the contract does this in one transaction:</p>
+        <ol>
+          <li><b>Buys the coin on pump.fun</b> with the bond (pump.fun's fees come out of it, like for any buyer). It protects itself with a minimum-tokens check so the bond isn't sold cheaply into a sudden price move.</li>
+          <li><b>Burns every token it received</b>, permanently destroying them, so the coin's total supply shrinks.</li>
+          <li>Returns any small leftover (a few thousandths of a SOL held back for pump.fun's costs) to the founder.</li>
+        </ol>
+        <p>Effect on the coin: the SOL of the bond ends up in the bonding curve, and the tokens it bought no longer exist. Everyone else's holdings are a slightly bigger slice of a smaller supply, on a curve with more SOL in it. The founder gets nothing back beyond that leftover.</p>
+        <p>Only two wallets can trigger the burn (the keeper and the Balls admin wallet). They can't choose where the money goes: the contract only ever spends the bond on that coin's pump.fun buy, and burns the result.</p>
+      </article>
+
+      <article class="card doc" id="trading">
+        <h2>Trading &amp; fees</h2>
+        <ul>
+          <li>The trade panel on each coin page sends a <b>plain pump.fun buy or sell</b> from your wallet, with a slippage guard (transactions fail rather than fill more than 5% worse than the estimate, plus pump.fun's fees). Balls adds nothing to the transaction.</li>
+          <li>You can equally trade the same coin directly on pump.fun.</li>
+          <li><b>Balls charges no fee</b> on launches, trades or bonds.</li>
+          <li>pump.fun's own fees apply to trades, per pump.fun's rules. As the coin's <b>creator</b>, the founder also earns whatever creator fee pump.fun pays to creators. Balls does not touch it.</li>
+          <li>After a coin graduates from the curve, trading moves to PumpSwap. The Balls trade panel then points you to pump.fun.</li>
+        </ul>
+      </article>
+
+      <article class="card doc" id="trust">
+        <h2>Who can do what</h2>
+        <p>Your bond is held by <b>a smart contract</b> (the Balls escrow program), in a vault that only that program can move. No person holds it. This is exactly what each party can and can't do:</p>
+        <div class="tablewrap"><table>
+          <tr><th>Who</th><th>Can</th><th>Can't</th></tr>
+          <tr><td><b>The founder</b></td><td>Claim the bond back when the coin is at/above the target. Reclaim it if it sits unburned for 7 days after the deadline.</td><td>Withdraw it any other way, cancel it, or change the target or deadline.</td></tr>
+          <tr><td><b>Keeper + Balls admin wallet</b></td><td>Trigger the burn of an expired bond whose target wasn't met.</td><td>Withdraw the bond, send it anywhere, burn a bond before its deadline, or burn one whose target was met.</td></tr>
+          <tr><td><b>Anyone else</b></td><td>Read everything, trade the coin.</td><td>Touch the bond.</td></tr>
+          <tr><td><b>Balls, as owner of the program's upgrade key</b></td><td><b>Upgrade the contract's code.</b></td><td>(An upgrade could in principle change these rules. See below.)</td></tr>
+        </table></div>
+        <div class="callout"><b>The honest caveat: upgrades.</b> Solana programs can be upgraded by a designated "upgrade authority". For now, that's the Balls admin wallet. That means Balls could, in principle, deploy a new version of the contract that behaves differently. Until that key is renounced or moved to a multisig (see <a href="#next" style="color:var(--lime-ink);text-decoration:underline;">What's next</a>), you are trusting Balls not to do that. The program's source is in our repository, and the address of the deployed binary can be compared against it (see <a href="#verify" style="color:var(--lime-ink);text-decoration:underline;">Verify</a>).</div>
+        <p>Two other things to know: the contract has <b>not been independently audited</b>, and it depends on pump.fun's program, which Balls doesn't control.</p>
+      </article>
+
+      <article class="card doc" id="verify">
+        <h2>Verify anything yourself</h2>
+        <p>You don't have to take the site's word for anything. Everything is on-chain, and each coin page lists the accounts involved.</p>
+        <h3>1. The bond</h3>
+        <p>Every bond is an account owned by the Balls program, at a predictable address:</p>
+        <pre>bond account    = PDA(["bond", coin mint], Balls program)
+collateral vault = PDA(["vault", bond account], Balls program)   (a system account holding the SOL)</pre>
+        <p>Open the <b>bond account</b> and the <b>collateral vault</b> on Solscan (both are linked on the coin page under "Receipts"). The vault's SOL balance is the collateral. The bond account records the founder, the coin, the target, the collateral amount, the deadline and the status (active, claimed, burned, refunded).</p>
+        <h3>2. The outcome</h3>
+        <p>A claim moves the vault's SOL to the founder in a transaction from the founder's wallet. A burn is a transaction from the keeper or admin wallet in which the vault buys the coin on pump.fun and the tokens are burned. The bond's status flips accordingly, and the site reads exactly that.</p>
+        <h3>3. The contract itself</h3>
+        <p>The escrow program's address is shown on every coin page and at the bottom of this section. Its source code is public in the project repository. To check that the deployed program matches the source, build it from source and compare its SHA-256 hash with the deployed binary's (<code>solana program dump &lt;program id&gt; file.so</code>, then hash the file).</p>
+        <p>The site only lists a coin if pump.fun's own bonding-curve account for it names the bond's founder as its creator, so a bond can only ever be posted by the wallet that actually launched the coin.</p>
+      </article>
+
+      <article class="card doc" id="risks">
+        <h2>Risks &amp; limits</h2>
+        <ul>
+          <li><b>New, unaudited contract.</b> The Balls escrow program hasn't been independently audited. It has been tested on Solana's test network against the real pump.fun program, but bugs are possible and could lose or lock bonds.</li>
+          <li><b>Upgradeable for now.</b> Balls holds the upgrade key, so the rules could be changed by a new version. This is a trust assumption until the key is renounced or moved to a multisig.</li>
+          <li><b>pump.fun dependency.</b> The burn is a buy on pump.fun's program. If pump.fun changes that program, burns may fail until Balls updates. Founders can reclaim an expired, unburned bond after the 7-day grace period.</li>
+          <li><b>Live-snapshot targets.</b> "Hit" is judged from the coin's market cap at the moment of the claim or burn. Claim as soon as you hit it.</li>
+          <li><b>A bond isn't a guarantee.</b> It doesn't stop a founder from selling, and a founder can buy their own coin to reach the target.</li>
+          <li><b>Memecoin risk.</b> Prices can go to zero. You can lose everything you put in, including the bond.</li>
+          <li><b>Not advice, not affiliated.</b> Nothing here is financial advice. Balls is independent of pump.fun.</li>
+        </ul>
+        <p>Full terms are on the <a href="legal.html" style="color:var(--lime-ink);text-decoration:underline;">Legal</a> page.</p>
+      </article>
+
+      <article class="card doc" id="next">
+        <h2>What's next</h2>
+        <ul>
+          <li><b>Independent audit</b> of the escrow contract.</li>
+          <li><b>Removing the upgrade risk:</b> moving the upgrade key to a multisig, and later renouncing it once the program is proven, so the rules become permanent.</li>
+          <li><b>More checks on the burn path</b> as pump.fun evolves.</li>
+        </ul>
+        <p>Changes will be announced on the site before they take effect. Bonds already posted stay governed by the contract they were posted to.</p>
+      </article>
+
+      <article class="card doc faq" id="faq">
+        <h2>FAQ</h2>
+        <details><summary>Can I launch without a bond?</summary><p>No. That's the whole product. Every coin listed here has a founder with SOL behind it.</p></details>
+        <details><summary>Do I need a pump.fun account?</summary><p>No. Your Solana wallet signs the launch. The coin is created on pump.fun's program with your wallet as its creator.</p></details>
+        <details><summary>Which wallets work?</summary><p>Any Solana wallet that supports the Wallet Standard: Phantom, Solflare, Backpack and most others.</p></details>
+        <details><summary>Will my coin show up on pump.fun?</summary><p>It's a real pump.fun coin on-chain, and you can always open it by its mint address. Whether pump.fun's own front page lists it is up to pump.fun.</p></details>
+        <details><summary>What if I hit the target but it dips before I claim?</summary><p>The contract checks the live market cap at the moment you claim. If it has dipped below the target, the claim is refused. Claim as soon as you see "Target hit".</p></details>
+        <details><summary>I hit the target after the 48 hours. Can I still claim?</summary><p>Yes, as long as nobody has burned the bond yet. A burn only runs while the market cap is below the target, and the keeper checks regularly, so a bond that's below target at the deadline is normally burned soon after.</p></details>
+        <details><summary>Can I add to, cancel or change my bond?</summary><p>No. Target, bond and deadline are fixed when you launch.</p></details>
+        <details><summary>What happens to my coin after a burn?</summary><p>It keeps trading on pump.fun as normal. The burn just removes the tokens the contract bought from supply.</p></details>
+        <details><summary>Can I put a bond on a coin I already launched on pump.fun?</summary><p>Not right now. Bonds are created together with the launch.</p></details>
+        <details><summary>Does Balls take a fee?</summary><p>No. You pay Solana network fees and account rent, plus pump.fun's own trading fees.</p></details>
+        <details><summary>What if Balls disappears?</summary><p>The bond stays in the contract. If nobody burns an expired, unmet bond, you can reclaim it yourself 7 days after the deadline. You don't need Balls for that.</p></details>
+        <details><summary>Can Balls take my bond?</summary><p>Not through the contract as it is written: there is no instruction that lets Balls withdraw a bond. The remaining risk is a malicious upgrade to the contract, which is why the upgrade key is a trust assumption for now. See "Who can do what".</p></details>
+        <details><summary>Is this financial advice?</summary><p>No. It's a memecoin launchpad. You can lose everything.</p></details>
+      </article>
+
+      <article class="card doc" id="dev">
+        <h2>For developers</h2>
+        <h3>Addresses</h3>
+        <div class="tablewrap"><table>
+          <tr><th>What</th><th>Address</th></tr>
+          <tr><td>Balls escrow program</td><td><code>3VQsTJGWQ1L4t312R527475JKUuSjsbSjbQoKbFqKoQS</code></td></tr>
+          <tr><td>Balls admin (resolver) wallet</td><td><code>HE8Khn19yPTzFZTLcoZLZqRV1AWypnUJ4L4NoYLS66uw</code></td></tr>
+          <tr><td>pump.fun program</td><td><code>6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P</code></td></tr>
+        </table></div>
+        <h3>Launch transaction</h3>
+        <p>A single transaction, signed by the founder and the fresh coin mint:</p>
+        <pre>1. pump.fun create_v2   (creator = founder, Token-2022 mint)
+2. Balls create_bond    (target market cap in lamports, collateral in lamports)</pre>
+        <p><code>create_bond</code> checks that the founder is the creator recorded in pump.fun's bonding-curve account, that the coin hasn't graduated, that the target is above the current market cap, and that the collateral is at least 0.01 SOL. It then moves the collateral into the vault PDA.</p>
+        <h3>Instructions</h3>
+        <div class="tablewrap"><table>
+          <tr><th>Instruction</th><th>Who</th><th>What</th></tr>
+          <tr><td><code>create_bond</code></td><td>founder</td><td>Locks the collateral against a target for 48 hours.</td></tr>
+          <tr><td><code>claim_bond</code></td><td>founder</td><td>Returns the collateral when the curve's market cap is at/above the target (or the coin graduated).</td></tr>
+          <tr><td><code>resolve_bond</code></td><td>keeper / admin</td><td>After the deadline, if the target is unmet: buys the coin on pump.fun (<code>buy_exact_sol_in</code>) with the vault's SOL and burns everything bought.</td></tr>
+          <tr><td><code>refund_stuck</code></td><td>founder</td><td>Returns an unresolved expired bond 7 days after its deadline.</td></tr>
+          <tr><td><code>init_config</code>, <code>set_resolver</code>, <code>set_keeper</code></td><td>upgrade authority / admin</td><td>One-time setup, and rotating the two wallets allowed to trigger burns.</td></tr>
+        </table></div>
+        <h3>Reading state</h3>
+        <ol>
+          <li>Fetch all accounts of the Balls program with the <code>Bond</code> discriminator (Anchor: <code>program.account.bond.all()</code>).</li>
+          <li>Read each coin's bonding curve (PDA <code>["bonding-curve", mint]</code> under the pump.fun program): <code>virtual_token_reserves</code> @8, <code>virtual_sol_reserves</code> @16, <code>token_total_supply</code> @40, <code>complete</code> @48, <code>creator</code> @49. Market cap = <code>vSol x supply / vToken</code>.</li>
+        </ol>
+        <p>The whole client is a static site: no backend, no database. The bond ledger is the blockchain.</p>
+      </article>
+
+      <article class="card doc" id="glossary">
+        <h2>Glossary</h2>
+        <table>
+          <tr><th>Term</th><th>Meaning</th></tr>
+          <tr><td>Bond</td><td>The SOL a founder locks behind their target. Also the on-chain record of it.</td></tr>
+          <tr><td>Target</td><td>The market cap the founder commits to reaching within 48 hours.</td></tr>
+          <tr><td>Market cap</td><td>Price x supply, read from pump.fun's bonding curve.</td></tr>
+          <tr><td>Bonding curve</td><td>pump.fun's automatic pricing mechanism: price rises as people buy, falls as they sell.</td></tr>
+          <tr><td>Graduation</td><td>When the curve fills and pump.fun moves the coin's liquidity to PumpSwap.</td></tr>
+          <tr><td>Burn</td><td>Permanently destroying tokens so they leave the supply.</td></tr>
+          <tr><td>Escrow vault</td><td>The account, owned by the Balls program, that holds a bond's SOL.</td></tr>
+          <tr><td>Keeper</td><td>An automated wallet that triggers due burns. It can't move funds anywhere else.</td></tr>
+          <tr><td>Upgrade authority</td><td>The key allowed to replace a Solana program's code. Currently held by Balls.</td></tr>
+          <tr><td>Lamport</td><td>1 / 1,000,000,000 of a SOL.</td></tr>
+        </table>
+      </article>
+
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="logo"><img class="logo-mark" src="logo.png" alt="Balls">Balls</div>
+        <p class="hint" style="margin-top:10px;max-width:280px;">Real devs. Real bonds. Coins on pump.fun.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Product</h4>
+          <a href="index.html">Explore</a>
+          <a href="launch.html">Launch</a>
+          <a href="docs.html">Docs</a>
+        </div>
+        <div class="foot-col">
+          <h4>Resources</h4>
+          <a href="docs.html#verify">Verify a bond</a>
+          <a href="legal.html">Legal</a>
+                  </div>
+        <div class="foot-col">
+          <h4>Community</h4>
+          <a href="https://x.com/hugeballsdotfun" target="_blank" rel="noopener">X</a>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      Balls is unreleased software under active development, independent of and not affiliated with pump.fun. Coins launched through Balls are created by third parties and are not endorsed, reviewed or guaranteed by Balls. A founder bond is a public signal that a founder put their own collateral behind a market-cap target — it is not a guarantee of price, liquidity or behaviour. Bond collateral is held by an on-chain escrow program. The program is new and unaudited, and its upgrade authority is currently held by Balls. Nothing on this site is financial advice. Memecoins are extremely volatile and you can lose everything you put in.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="walletModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Connect a wallet</h3>
+      <button class="modal-close" id="walletModalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="wallet-list" id="walletList"></div>
+  </div>
+</div>
+
+<script type="module" src="legal.js"></script>
+
+</body>
+</html>
