@@ -413,7 +413,7 @@ function renderChart() {
   const pct = (val, total) => `${(val / total) * 100}%`;
   for (const p of pts.filter((q) => q.trade).slice(-80)) {
     const dot = document.createElement("i");
-    dot.style.cssText = `position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);left:${pct(x(p.t), W)};top:${pct(y(toV(p.v)), H)};background:${p.trade.isBuy ? "#b8f227" : "#ff5a1f"};box-shadow:0 0 0 2px #101013;`;
+    dot.style.cssText = `position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);left:${pct(x(p.t), W)};top:${pct(y(toV(p.v)), H)};background:${p.trade.isBuy ? "#14f195" : "#ff5a1f"};box-shadow:0 0 0 2px #101013;`;
     overlay.appendChild(dot);
   }
   const cap = (txt, side, topPct, extra = "") => {
