@@ -153,7 +153,7 @@ function card(v) {
   el.querySelector(".cc-name").textContent = m ? m.name : shortAddress(v.mint);
   el.querySelector(".cc-sub").textContent = `${m ? m.symbol + "  ·  " : ""}dev ${shortAddress(v.founder)}`;
   setIcon(el.querySelector(".tok-icon"), m?.image, (m?.symbol || "?").slice(0, 1).toUpperCase());
-  el.addEventListener("click", () => (window.location.href = `coin.html?mint=${v.mint}`));
+  el.addEventListener("click", () => (window.location.href = `/coin?mint=${v.mint}`));
   return el;
 }
 

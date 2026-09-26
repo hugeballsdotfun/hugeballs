@@ -139,7 +139,7 @@ async function initLaunchForm() {
       const { txSig, mint } = await launchCoin({ name, symbol, description, imageFile, links: parsed.links, targetLamports: target, collateralSol, onStep: (t) => (btn.textContent = t) });
       console.log("launch tx", txSig, "mint", mint);
       showToast(`${symbol} is live, and the dev has the balls to back it. Redirecting…`);
-      window.location.href = `coin.html?mint=${mint}`;
+      window.location.href = `/coin?mint=${mint}`;
     } catch (err) {
       console.error(err);
       showToast(err.message || "Launch failed.");
