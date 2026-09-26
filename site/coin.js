@@ -34,6 +34,7 @@ import {
   web3,
   PROGRAM_ID,
 } from "./shared.js";
+import { safeHttpUrl } from "./links.js";
 
 const mintFromUrl = () => new URLSearchParams(window.location.search).get("mint");
 
@@ -156,6 +157,20 @@ async function main() {
     document.getElementById("coinName").textContent = `${m.name} (${m.symbol})`;
     document.getElementById("pageTitle").textContent = `${m.symbol} bond — Balls`;
     setIcon(document.getElementById("coinIcon"), m.image, m.symbol.slice(0, 1).toUpperCase());
+    // Social links from the metadata: only plain http(s) URLs, built with DOM APIs (never innerHTML).
+    const box = document.getElementById("coinLinks");
+    for (const [key, label] of [["website", "Website"], ["twitter", "X"], ["telegram", "Telegram"]]) {
+      const url = m.links?.[key] && typeof m.links[key] === "string" ? safeHttpUrl(m.links[key]) : null;
+      if (!url) continue;
+      const a = document.createElement("a");
+      a.className = "social-pill";
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer nofollow";
+      a.textContent = label;
+      box.appendChild(a);
+    }
+    box.hidden = box.children.length === 0;
     if (m.description) {
       const d = document.getElementById("coinDescription");
       d.textContent = m.description;

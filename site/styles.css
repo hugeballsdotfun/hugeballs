@@ -353,3 +353,9 @@ input[type=file]{width:100%;min-width:0;}
 .cc-progress .meter{margin:2px 0;}
 .cc-progress-top b{color:#fff;}
 .cc-progress-bot{display:flex;justify-content:space-between;}
+
+/* social links on the launch form and coin page */
+.links-box{display:grid;gap:12px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--bg-2);}
+.social-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.social-pill{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:700;font-size:13px;}
+.social-pill:hover{border-color:var(--lime);color:var(--lime);}

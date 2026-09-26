@@ -480,7 +480,7 @@ async function prepareImage(file) {
   throw new Error("That image is too big to shrink under 95 KB — try a simpler one.");
 }
 
-export async function uploadTokenMetadata({ name, symbol, description, imageFile }) {
+export async function uploadTokenMetadata({ name, symbol, description, imageFile, links = {} }) {
   // Plain native Uint8Array, deliberately not a `Buffer` polyfill — arbundles
   // converts whatever it's given through its OWN internal Buffer instance
   // (loaded from the same jsdelivr bundle as everything else in
@@ -497,7 +497,9 @@ export async function uploadTokenMetadata({ name, symbol, description, imageFile
     imageUrl = await uploadToIrys(img.bytes, img.type);
   }
 
-  const metadataJson = { name, symbol, description: description || "", image: imageUrl };
+  // Same keys pump.fun uses, so its own page shows the links too.
+  const metadataJson = { name, symbol, description: description || "", image: imageUrl, showName: true, createdOn: "https://hugeballs.fun" };
+  for (const key of ["website", "twitter", "telegram"]) if (links[key]) metadataJson[key] = links[key];
   const jsonBytes = new TextEncoder().encode(JSON.stringify(metadataJson));
   return await uploadToIrys(jsonBytes, "application/json");
 }
@@ -725,17 +727,19 @@ export async function fetchCoinMetadata(mint) {
     if (md) {
       let image = null;
       let description = "";
+      let links = {};
       try {
         const resp = await fetch(md.uri);
         if (resp.ok) {
           const json = await resp.json();
           image = json.image || null;
           description = json.description || "";
+          links = { website: json.website, twitter: json.twitter, telegram: json.telegram };
         }
       } catch (err) {
         console.warn("Could not fetch metadata JSON", err);
       }
-      result = { name: md.name, symbol: md.symbol, uri: md.uri, image, description };
+      result = { name: md.name, symbol: md.symbol, uri: md.uri, image, description, links };
     }
   } catch (err) {
     console.warn("Could not read token metadata for", mint, err);
@@ -749,14 +753,14 @@ export async function fetchCoinMetadata(mint) {
 // there is never a moment where the coin exists un-bonded. The wallet signs
 // once; the fresh mint keypair co-signs.
 // ---------------------------------------------------------------------
-export async function launchCoin({ name, symbol, description, imageFile, targetSol, targetLamports, collateralSol }) {
+export async function launchCoin({ name, symbol, description, imageFile, links = {}, targetSol, targetLamports, collateralSol }) {
   if (!program || !wallet) throw new Error("Connect a wallet first.");
   const target = targetLamports ?? solToLamports(targetSol);
   const collateral = solToLamports(collateralSol);
   if (!target || !collateral) throw new Error("Enter a valid target market cap and collateral in SOL.");
 
   if (MODE === "custodial" && collateral < MIN_COLLATERAL_LAMPORTS) throw new Error("Collateral must be at least 0.01 SOL.");
-  const uri = await uploadTokenMetadata({ name, symbol, description, imageFile });
+  const uri = await uploadTokenMetadata({ name, symbol, description, imageFile, links });
 
   const mint = web3.Keypair.generate();
   if (MODE === "custodial") {

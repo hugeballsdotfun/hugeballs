@@ -15,6 +15,7 @@ import {
   lamportsToSol,
   solToLamports,
 } from "./shared.js";
+import { normalizeLinks } from "./links.js";
 
 function initImagePreview() {
   const input = document.getElementById("imageInput");
@@ -123,13 +124,19 @@ async function initLaunchForm() {
     if (collateral < 10_000_000n) return showToast("Collateral must be at least 0.01 SOL.");
     if (startMcap && target <= startMcap) return showToast("Target must be above where a new coin starts.");
     const imageFile = document.getElementById("imageInput").files?.[0] || null;
+    const parsed = normalizeLinks({
+      website: data.get("website"),
+      twitter: data.get("twitter"),
+      telegram: data.get("telegram"),
+    });
+    if (parsed.error) return showToast(parsed.error);
 
     btn.disabled = true;
     try {
       btn.textContent = imageFile ? "Uploading image…" : "Uploading metadata…";
       // launchCoin uploads metadata first, then asks the wallet to sign the
       // combined create + bond transaction.
-      const { txSig, mint } = await launchCoin({ name, symbol, description, imageFile, targetLamports: target, collateralSol });
+      const { txSig, mint } = await launchCoin({ name, symbol, description, imageFile, links: parsed.links, targetLamports: target, collateralSol });
       console.log("launch tx", txSig, "mint", mint);
       showToast(`${symbol} is live, and the dev has the balls to back it. Redirecting…`);
       window.location.href = `coin.html?mint=${mint}`;
