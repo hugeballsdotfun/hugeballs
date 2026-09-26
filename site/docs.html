@@ -190,7 +190,7 @@ collateral vault = PDA(["vault", bond account], Balls program)   (a system accou
         <h3>2. The outcome</h3>
         <p>A claim moves the vault's SOL to the founder in a transaction from the founder's wallet. A burn is a transaction from the keeper or admin wallet in which the vault buys the coin on pump.fun and the tokens are burned. The bond's status flips accordingly, and the site reads exactly that.</p>
         <h3>3. The contract itself</h3>
-        <p>The escrow program's address is shown on every coin page and at the bottom of this section. Its source code is public in the project repository. To check that the deployed program matches the source, build it from source and compare its SHA-256 hash with the deployed binary's (<code>solana program dump &lt;program id&gt; file.so</code>, then hash the file).</p>
+        <p>The escrow program's address is shown on every coin page and at the bottom of this section. Its source code is public on <a href="https://github.com/hugeballsdotfun/hugeballs" target="_blank" rel="noopener" style="color:var(--lime-ink);text-decoration:underline;">GitHub</a>. To check that the deployed program matches the source, build it from source and compare its SHA-256 hash with the deployed binary's (<code>solana program dump &lt;program id&gt; file.so</code>, then hash the file).</p>
         <p>The site only lists a coin if pump.fun's own bonding-curve account for it names the bond's founder as its creator, so a bond can only ever be posted by the wallet that actually launched the coin.</p>
       </article>
 
